@@ -26,7 +26,8 @@ public class WebUtils
             String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36";
             URLConnection con = url.openConnection();
 
-            con.setRequestProperty("User-Agent", USER_AGENT);
+            con.setRequestProperty("User-Agent",
+                                   USER_AGENT);
             inputStream = con.getInputStream();
             outputStream = new FileOutputStream(path);
 
@@ -35,7 +36,9 @@ public class WebUtils
 
             while ((length = inputStream.read(buffer)) != -1)
             {
-                outputStream.write(buffer, 0, length);
+                outputStream.write(buffer,
+                                   0,
+                                   length);
             }
         }
         catch (Exception ex)

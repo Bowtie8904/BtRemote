@@ -44,15 +44,19 @@ public final class REST
             con.setDoOutput(true);
             con.setDoInput(true);
             con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-            con.setRequestProperty("User-Agent", "Mozilla/5.0");
-            con.setRequestProperty("Accept", "application/json");
+            con.setRequestProperty("Content-Type",
+                                   "application/json; charset=UTF-8");
+            con.setRequestProperty("User-Agent",
+                                   "Mozilla/5.0");
+            con.setRequestProperty("Accept",
+                                   "application/json");
 
             if (headers != null)
             {
                 for (String key : headers.keySet())
                 {
-                    con.setRequestProperty(key, headers.get(key));
+                    con.setRequestProperty(key,
+                                           headers.get(key));
                 }
             }
 
@@ -75,8 +79,7 @@ public final class REST
                 }
             }
             catch (Exception e)
-            {
-            }
+            {}
 
             returnJson = JSON.parse(response != null ? response.toString() : null);
         }
@@ -105,7 +108,8 @@ public final class REST
 
             if (urlParams.endsWith("&"))
             {
-                urlParams = urlParams.substring(0, urlParams.length() - 1);
+                urlParams = urlParams.substring(0,
+                                                urlParams.length() - 1);
             }
 
             URL obj = new URL(url);
@@ -113,15 +117,19 @@ public final class REST
             con.setDoOutput(true);
             con.setDoInput(true);
             con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            con.setRequestProperty("User-Agent", "Mozilla/5.0");
-            con.setRequestProperty("Accept", "application/json");
+            con.setRequestProperty("Content-Type",
+                                   "application/x-www-form-urlencoded");
+            con.setRequestProperty("User-Agent",
+                                   "Mozilla/5.0");
+            con.setRequestProperty("Accept",
+                                   "application/json");
 
             if (headers != null)
             {
                 for (String key : headers.keySet())
                 {
-                    con.setRequestProperty(key, headers.get(key));
+                    con.setRequestProperty(key,
+                                           headers.get(key));
                 }
             }
 
@@ -144,8 +152,7 @@ public final class REST
                 }
             }
             catch (Exception e)
-            {
-            }
+            {}
             returnJson = JSON.parse(response != null ? response.toString() : null);
         }
         catch (Exception e)
@@ -191,21 +198,25 @@ public final class REST
 
             if (url.endsWith("&"))
             {
-                url = url.substring(0, url.length() - 1);
+                url = url.substring(0,
+                                    url.length() - 1);
             }
 
             URL obj = new URL(url);
             HttpURLConnection con = (HttpURLConnection)obj.openConnection();
 
             con.setRequestMethod("GET");
-            con.setRequestProperty("User-Agent", "Mozilla/5.0");
-            con.setRequestProperty("Accept", "application/json");
+            con.setRequestProperty("User-Agent",
+                                   "Mozilla/5.0");
+            con.setRequestProperty("Accept",
+                                   "application/json");
 
             if (headers != null)
             {
                 for (String key : headers.keySet())
                 {
-                    con.setRequestProperty(key, headers.get(key));
+                    con.setRequestProperty(key,
+                                           headers.get(key));
                 }
             }
 
@@ -223,8 +234,7 @@ public final class REST
                 }
             }
             catch (Exception e)
-            {
-            }
+            {}
 
             json = JSON.parse(response != null ? response.toString() : null);
         }
@@ -253,9 +263,11 @@ public final class REST
 
         try
         {
-            result.append(URLEncoder.encode(key, "UTF-8"));
+            result.append(URLEncoder.encode(key,
+                                            "UTF-8"));
             result.append("=");
-            result.append(URLEncoder.encode(value, "UTF-8"));
+            result.append(URLEncoder.encode(value,
+                                            "UTF-8"));
             result.append("&");
         }
         catch (UnsupportedEncodingException e)
