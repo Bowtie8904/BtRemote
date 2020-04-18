@@ -149,8 +149,7 @@ public final class REST
                     response.append(inputLine);
                 }
             }
-            catch (Exception e)
-            {}
+
             returnJson = JSON.parse(response != null ? response.toString() : null);
         }
         catch (Exception e)
