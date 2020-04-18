@@ -81,7 +81,10 @@ public final class REST
 
         for (var headerName : con.getHeaderFields().keySet())
         {
-            headers.put(headerName, con.getHeaderField(headerName));
+            if (headerName != null)
+            {
+                headers.put(headerName.toLowerCase(), con.getHeaderField(headerName));
+            }
         }
 
         returnJson = JSON.parse(response != null ? response.toString() : null);
@@ -150,7 +153,10 @@ public final class REST
 
         for (var headerName : con.getHeaderFields().keySet())
         {
-            headers.put(headerName, con.getHeaderField(headerName));
+            if (headerName != null)
+            {
+                headers.put(headerName.toLowerCase(), con.getHeaderField(headerName));
+            }
         }
 
         returnJson = JSON.parse(response != null ? response.toString() : null);
@@ -230,7 +236,10 @@ public final class REST
 
         for (var headerName : con.getHeaderFields().keySet())
         {
-            headers.put(headerName, con.getHeaderField(headerName));
+            if (headerName != null)
+            {
+                headers.put(headerName.toLowerCase(), con.getHeaderField(headerName));
+            }
         }
 
         json = JSON.parse(response != null ? response.toString() : null);
