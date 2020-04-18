@@ -1,6 +1,7 @@
 package bt.remote.rest;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -30,132 +31,129 @@ public final class REST
      * @param json
      *            The JSON that should be sent to the endpoint.
      * @return The JSON response from the endpoint.
+     * @throws IOException
      */
-    public static synchronized JSONObject POST(String endpoint, Map<String, String> headers, JSONObject json)
+    public static synchronized JSONObject POST(String endpoint, Map<String, String> headers, JSONObject json) throws IOException
     {
         JSONObject returnJson = null;
 
-        try
+        String url = endpoint;
+
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection)obj.openConnection();
+        con.setDoOutput(true);
+        con.setDoInput(true);
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type",
+                               "application/json; charset=UTF-8");
+        con.setRequestProperty("User-Agent",
+                               "Mozilla/5.0");
+        con.setRequestProperty("Accept",
+                               "application/json");
+
+        if (headers != null)
         {
-            String url = endpoint;
-
-            URL obj = new URL(url);
-            HttpURLConnection con = (HttpURLConnection)obj.openConnection();
-            con.setDoOutput(true);
-            con.setDoInput(true);
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type",
-                                   "application/json; charset=UTF-8");
-            con.setRequestProperty("User-Agent",
-                                   "Mozilla/5.0");
-            con.setRequestProperty("Accept",
-                                   "application/json");
-
-            if (headers != null)
+            for (String key : headers.keySet())
             {
-                for (String key : headers.keySet())
-                {
-                    con.setRequestProperty(key,
-                                           headers.get(key));
-                }
+                con.setRequestProperty(key,
+                                       headers.get(key));
             }
-
-            try (OutputStream os = con.getOutputStream())
-            {
-                os.write(json.toString().getBytes("UTF-8"));
-            }
-
-            StringBuffer response = null;
-
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream())))
-            {
-
-                String inputLine;
-                response = new StringBuffer();
-
-                while ((inputLine = in.readLine()) != null)
-                {
-                    response.append(inputLine);
-                }
-            }
-
-            returnJson = JSON.parse(response != null ? response.toString() : null);
         }
-        catch (Exception e)
+
+        try (OutputStream os = con.getOutputStream())
         {
-            Logger.global().print(e);
+            os.write(json.toString().getBytes("UTF-8"));
         }
+
+        StringBuffer response = null;
+
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream())))
+        {
+
+            String inputLine;
+            response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null)
+            {
+                response.append(inputLine);
+            }
+        }
+
+        for (var headerName : con.getHeaderFields().keySet())
+        {
+            headers.put(headerName, con.getHeaderField(headerName));
+        }
+
+        returnJson = JSON.parse(response != null ? response.toString() : null);
 
         return returnJson;
     }
 
-    public static synchronized JSONObject POST(String endpoint, Map<String, String> headers, String... params)
+    public static synchronized JSONObject POST(String endpoint, Map<String, String> headers, String... params) throws IOException
     {
         JSONObject returnJson = null;
 
-        try
+        String url = endpoint;
+
+        String urlParams = "";
+
+        for (String param : params)
         {
-            String url = endpoint;
-
-            String urlParams = "";
-
-            for (String param : params)
-            {
-                urlParams += param;
-            }
-
-            if (urlParams.endsWith("&"))
-            {
-                urlParams = urlParams.substring(0,
-                                                urlParams.length() - 1);
-            }
-
-            URL obj = new URL(url);
-            HttpURLConnection con = (HttpURLConnection)obj.openConnection();
-            con.setDoOutput(true);
-            con.setDoInput(true);
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type",
-                                   "application/x-www-form-urlencoded");
-            con.setRequestProperty("User-Agent",
-                                   "Mozilla/5.0");
-            con.setRequestProperty("Accept",
-                                   "application/json");
-
-            if (headers != null)
-            {
-                for (String key : headers.keySet())
-                {
-                    con.setRequestProperty(key,
-                                           headers.get(key));
-                }
-            }
-
-            try (OutputStream os = con.getOutputStream())
-            {
-                os.write(urlParams.getBytes("UTF-8"));
-            }
-
-            StringBuffer response = null;
-
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream())))
-            {
-
-                String inputLine;
-                response = new StringBuffer();
-
-                while ((inputLine = in.readLine()) != null)
-                {
-                    response.append(inputLine);
-                }
-            }
-
-            returnJson = JSON.parse(response != null ? response.toString() : null);
+            urlParams += param;
         }
-        catch (Exception e)
+
+        if (urlParams.endsWith("&"))
         {
-            Logger.global().print(e);
+            urlParams = urlParams.substring(0,
+                                            urlParams.length() - 1);
         }
+
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection)obj.openConnection();
+        con.setDoOutput(true);
+        con.setDoInput(true);
+        con.setRequestMethod("POST");
+        con.setRequestProperty("Content-Type",
+                               "application/x-www-form-urlencoded");
+        con.setRequestProperty("User-Agent",
+                               "Mozilla/5.0");
+        con.setRequestProperty("Accept",
+                               "application/json");
+
+        if (headers != null)
+        {
+            for (String key : headers.keySet())
+            {
+                con.setRequestProperty(key,
+                                       headers.get(key));
+            }
+        }
+
+        try (OutputStream os = con.getOutputStream())
+        {
+            os.write(urlParams.getBytes("UTF-8"));
+        }
+
+        StringBuffer response = null;
+
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream())))
+        {
+
+            String inputLine;
+            response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null)
+            {
+                response.append(inputLine);
+            }
+        }
+
+        for (var headerName : con.getHeaderFields().keySet())
+        {
+            headers.put(headerName, con.getHeaderField(headerName));
+        }
+
+        returnJson = JSON.parse(response != null ? response.toString() : null);
 
         return returnJson;
     }
@@ -174,71 +172,68 @@ public final class REST
      * @param params
      *            URL parameters for the endpoint. Format: ?key=value&
      * @return The JSON response from the endpoint.
+     * @throws IOException
      */
-    public static synchronized JSONObject GET(String endpoint, Map<String, String> headers, String... params)
+    public static synchronized JSONObject GET(String endpoint, Map<String, String> headers, String... params) throws IOException
     {
         JSONObject json = null;
 
-        try
+        String url = endpoint;
+
+        if (params.length != 0)
         {
-            String url = endpoint;
-
-            if (params.length != 0)
-            {
-                url += "?";
-            }
-
-            for (String param : params)
-            {
-                url += param;
-            }
-
-            if (url.endsWith("&"))
-            {
-                url = url.substring(0,
-                                    url.length() - 1);
-            }
-
-            URL obj = new URL(url);
-            HttpURLConnection con = (HttpURLConnection)obj.openConnection();
-
-            con.setRequestMethod("GET");
-            con.setRequestProperty("User-Agent",
-                                   "Mozilla/5.0");
-            con.setRequestProperty("Accept",
-                                   "application/json");
-
-            if (headers != null)
-            {
-                for (String key : headers.keySet())
-                {
-                    con.setRequestProperty(key,
-                                           headers.get(key));
-                }
-            }
-
-            StringBuffer response = null;
-
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream())))
-            {
-
-                String inputLine;
-                response = new StringBuffer();
-
-                while ((inputLine = in.readLine()) != null)
-                {
-                    response.append(inputLine);
-                }
-            }
-            catch (Exception e)
-            {}
-
-            json = JSON.parse(response != null ? response.toString() : null);
+            url += "?";
         }
-        catch (Exception e)
+
+        for (String param : params)
         {
-            Logger.global().print(e);
+            url += param;
         }
+
+        if (url.endsWith("&"))
+        {
+            url = url.substring(0,
+                                url.length() - 1);
+        }
+
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection)obj.openConnection();
+
+        con.setRequestMethod("GET");
+        con.setRequestProperty("User-Agent",
+                               "Mozilla/5.0");
+        con.setRequestProperty("Accept",
+                               "application/json");
+
+        if (headers != null)
+        {
+            for (String key : headers.keySet())
+            {
+                con.setRequestProperty(key,
+                                       headers.get(key));
+            }
+        }
+
+        StringBuffer response = null;
+
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream())))
+        {
+
+            String inputLine;
+            response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null)
+            {
+                response.append(inputLine);
+            }
+        }
+
+        for (var headerName : con.getHeaderFields().keySet())
+        {
+            headers.put(headerName, con.getHeaderField(headerName));
+        }
+
+        json = JSON.parse(response != null ? response.toString() : null);
 
         return json;
     }
