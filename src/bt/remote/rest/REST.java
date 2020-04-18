@@ -22,7 +22,7 @@ public final class REST
 {
     /**
      * Performs a POST request to the given endpoint and transmits the given JSON.
-     * 
+     *
      * @param action
      *            The action that should be performed. The value will be added to the json with the key 'Task'.
      * @param endpoint
@@ -78,8 +78,6 @@ public final class REST
                     response.append(inputLine);
                 }
             }
-            catch (Exception e)
-            {}
 
             returnJson = JSON.parse(response != null ? response.toString() : null);
         }
@@ -165,11 +163,11 @@ public final class REST
 
     /**
      * Performs a GET request to the given endpoint with the given parameters.
-     * 
+     *
      * <p>
      * Use {@link #formParam(String, String)} to correctly format parameter pairs of name and value.
      * </p>
-     * 
+     *
      * @param action
      *            The action that should be performed. The value will be added as the parameter 'task'
      * @param endpoint
@@ -248,11 +246,11 @@ public final class REST
 
     /**
      * Formats the given Strings in a corect url parameter format.
-     * 
+     *
      * @param key
      * @param value
      * @return The formatted String
-     * 
+     *
      *         <pre>
      * key=value&
      *         </pre>
