@@ -64,6 +64,11 @@ public final class REST
         {
             os.write(json.toString().getBytes("UTF-8"));
         }
+        catch (IOException e)
+        {
+            headers.put("responsecode", con.getResponseCode() + "");
+            throw e;
+        }
 
         StringBuffer response = null;
 
@@ -77,6 +82,11 @@ public final class REST
             {
                 response.append(inputLine);
             }
+        }
+        catch (IOException e)
+        {
+            headers.put("responsecode", con.getResponseCode() + "");
+            throw e;
         }
 
         for (var headerName : con.getHeaderFields().keySet())
@@ -136,6 +146,11 @@ public final class REST
         {
             os.write(urlParams.getBytes("UTF-8"));
         }
+        catch (IOException e)
+        {
+            headers.put("responsecode", con.getResponseCode() + "");
+            throw e;
+        }
 
         StringBuffer response = null;
 
@@ -149,6 +164,11 @@ public final class REST
             {
                 response.append(inputLine);
             }
+        }
+        catch (IOException e)
+        {
+            headers.put("responsecode", con.getResponseCode() + "");
+            throw e;
         }
 
         for (var headerName : con.getHeaderFields().keySet())
@@ -232,6 +252,11 @@ public final class REST
             {
                 response.append(inputLine);
             }
+        }
+        catch (IOException e)
+        {
+            headers.put("responsecode", con.getResponseCode() + "");
+            throw e;
         }
 
         for (var headerName : con.getHeaderFields().keySet())
