@@ -7,7 +7,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
-import bt.utils.log.Logger;
+import bt.log.Logger;
 
 /**
  * @author &#8904
