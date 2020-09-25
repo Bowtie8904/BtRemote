@@ -190,33 +190,33 @@ public class Client implements Killable, Runnable
             {
                 Object incoming = this.in.readObject();
 
-                if (incoming instanceof Request)
+                Threads.get().executeCached(() ->
                 {
-                    Threads.get().executeCached(() ->
+                    try
                     {
-                        try
+                        if (incoming instanceof Request)
                         {
                             handleIncomingRequest((Request)incoming);
                         }
-                        catch (IOException e)
+                        else if (incoming instanceof Response)
                         {
-                            // ignore
+                            handleIncomingResponse((Response)incoming);
                         }
-                    });
-                }
-                else if (incoming instanceof Response)
-                {
-                    handleIncomingResponse((Response)incoming);
-                }
-                else if (incoming instanceof KeepAlive)
-                {
-                    KeepAlive ka = (KeepAlive)incoming;
-                    sendObject(new Acknowledge(ka.getData()));
-                }
-                else if (incoming instanceof Acknowledge)
-                {
-                    handleIncomingAcknowledge((Acknowledge)incoming);
-                }
+                        else if (incoming instanceof KeepAlive)
+                        {
+                            KeepAlive ka = (KeepAlive)incoming;
+                            sendObject(new Acknowledge(ka.getData()));
+                        }
+                        else if (incoming instanceof Acknowledge)
+                        {
+                            handleIncomingAcknowledge((Acknowledge)incoming);
+                        }
+                    }
+                    catch (IOException e)
+                    {
+                        // ignore
+                    }
+                });
             }
             catch (EOFException eof)
             {
