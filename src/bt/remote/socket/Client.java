@@ -62,7 +62,7 @@ public class Client implements Killable, Runnable
         this.dataProcessor = dataProcessor;
     }
 
-    protected Data handleIncomingRequest(Request request)
+    protected void handleIncomingRequest(Request request) throws IOException
     {
         Data response = null;
 
@@ -76,7 +76,10 @@ public class Client implements Killable, Runnable
             }
         }
 
-        return response;
+        if (response != null)
+        {
+            sendResponse(response);
+        }
     }
 
     protected void handleIncomingResponse(Response response)
@@ -190,12 +193,17 @@ public class Client implements Killable, Runnable
 
                 if (incoming instanceof Request)
                 {
-                    Data responseData = handleIncomingRequest((Request)incoming);
-
-                    if (responseData != null)
+                    Threads.get().executeCached(() ->
                     {
-                        sendResponse(responseData);
-                    }
+                        try
+                        {
+                            handleIncomingRequest((Request)incoming);
+                        }
+                        catch (IOException e)
+                        {
+                            // ignore
+                        }
+                    });
                 }
                 else if (incoming instanceof Response)
                 {
