@@ -37,7 +37,7 @@ public class Server implements Killable, Runnable
         if (!this.serverSocket.isClosed())
         {
             Socket socket = this.serverSocket.accept();
-            Client client = new Client(socket);
+            Client client = createClient(socket);
             this.eventDispatcher.dispatch(new NewClientConnection(client));
             client.start();
 
@@ -45,6 +45,11 @@ public class Server implements Killable, Runnable
         }
 
         return connected;
+    }
+
+    protected Client createClient(Socket socket) throws IOException
+    {
+        return new Client(socket);
     }
 
     public Dispatcher getEventDispatcher()
