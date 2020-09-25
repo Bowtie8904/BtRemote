@@ -2,6 +2,7 @@ package bt.remote.socket;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -123,7 +124,14 @@ public class Client implements Killable, Runnable
 
     protected synchronized void sendObject(Object obj) throws IOException
     {
-        this.out.writeObject(obj);
+        try
+        {
+            this.out.writeObject(obj);
+        }
+        catch (NotSerializableException e)
+        {
+            Logger.global().print(e);
+        }
     }
 
     /**
