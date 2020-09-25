@@ -215,16 +215,19 @@ public class Client implements Killable, Runnable
                     catch (IOException e)
                     {
                         // ignore
+                        Logger.global().print(e);
                     }
                 });
             }
             catch (EOFException eof)
             {
                 // ignore
+                Logger.global().print(eof);
             }
             catch (IOException io)
             {
                 // ignore
+                Logger.global().print(io);
             }
             catch (ClassNotFoundException e)
             {
