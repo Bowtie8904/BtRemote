@@ -6,7 +6,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.concurrent.TimeUnit;
 
 import bt.async.Async;
 import bt.async.AsyncException;
@@ -144,13 +143,15 @@ public class Client implements Killable, Runnable
     {
         this.running = true;
         Threads.get().execute(this, "Client " + this.host + ":" + this.port);
-        Threads.get().schedule(this::sendKeepAlive, this.keepAliveTimeout / 2, TimeUnit.MILLISECONDS, "Ping-Thread " + this.host + ":" + this.port);
+        Threads.get().execute(this::sendKeepAlive, "Ping-Thread " + this.host + ":" + this.port);
     }
 
     protected void sendKeepAlive()
     {
         while (this.running && !this.socket.isClosed())
         {
+            Exceptions.ignoreThrow(() -> Thread.sleep(this.keepAliveTimeout));
+
             try
             {
                 Data data = new Data(String.class, "Ping", StringID.uniqueID());
@@ -174,8 +175,6 @@ public class Client implements Killable, Runnable
             {
                 Logger.global().print(e);
             }
-
-            Exceptions.ignoreThrow(() -> Thread.sleep(this.keepAliveTimeout));
         }
     }
 

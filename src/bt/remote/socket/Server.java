@@ -71,7 +71,7 @@ public class Server implements Killable, Runnable
     public void start()
     {
         this.running = true;
-        Threads.get().executeCached(this, "Server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
+        Threads.get().execute(this, "Server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
     }
 
     /**
