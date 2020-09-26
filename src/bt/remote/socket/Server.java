@@ -66,6 +66,11 @@ public class Server implements Killable, Runnable
         Logger.global().print("Killing server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
         this.running = false;
         Exceptions.ignoreThrow(() -> Null.checkClose(this.serverSocket));
+
+        if (!InstanceKiller.isActive())
+        {
+            InstanceKiller.unregister(this);
+        }
     }
 
     public void start()

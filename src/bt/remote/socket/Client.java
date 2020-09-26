@@ -145,6 +145,11 @@ public class Client implements Killable, Runnable
         Exceptions.ignoreThrow(() -> Null.checkClose(this.in));
         Exceptions.ignoreThrow(() -> Null.checkClose(this.out));
         Exceptions.ignoreThrow(() -> Null.checkClose(this.socket));
+
+        if (!InstanceKiller.isActive())
+        {
+            InstanceKiller.unregister(this);
+        }
     }
 
     public void start()
