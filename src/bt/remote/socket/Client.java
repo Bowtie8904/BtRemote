@@ -104,13 +104,13 @@ public class Client implements Killable, Runnable
         }
     }
 
-    public <T> Async<T> send(T data) throws IOException
+    public <T> Async<T> send(Object data) throws IOException
     {
         Data<T> outgoingData = new Data(data.getClass(), data, StringID.uniqueID());
         return send(outgoingData);
     }
 
-    public <T> Async<T> send(Data<T> data) throws IOException
+    public <T> Async<T> send(Data data) throws IOException
     {
         Async async = new Async(data.getID());
         sendObject(new Request(data));
