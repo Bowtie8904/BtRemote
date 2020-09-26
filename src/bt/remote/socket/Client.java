@@ -80,6 +80,10 @@ public class Client implements Killable, Runnable
         {
             sendResponse(response);
         }
+        else
+        {
+            sendObject(new Acknowledge(new Data(Object.class, null, request.getData().getID())));
+        }
     }
 
     protected void handleIncomingResponse(Response response)
