@@ -1,6 +1,7 @@
 package bt.remote.socket;
 
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -20,6 +21,7 @@ import bt.utils.Null;
 public class Server implements Killable, Runnable
 {
     protected ServerSocket serverSocket;
+    protected MulticastClient multicastClient;
     protected Dispatcher eventDispatcher;
     protected boolean running;
 
@@ -28,6 +30,30 @@ public class Server implements Killable, Runnable
         this.eventDispatcher = new Dispatcher();
         this.serverSocket = new ServerSocket(port);
         InstanceKiller.killOnShutdown(this);
+    }
+
+    public void setupMultiCastDiscovering(String discoverName) throws IOException
+    {
+        setupMultiCastDiscovering(discoverName, MulticastClient.DEFAULT_GROUP_ADDRESS, MulticastClient.DEFAULT_PORT);
+    }
+
+    public void setupMultiCastDiscovering(String discoverName, String multicastGroupAdress, int port) throws IOException
+    {
+        this.multicastClient = new MulticastClient(port, multicastGroupAdress);
+        this.multicastClient.onReceive(packet ->
+        {
+            byte[] buf = discoverName.getBytes();
+            DatagramPacket response = new DatagramPacket(buf, buf.length, packet.getAddress(), packet.getPort());
+
+            try
+            {
+                this.multicastClient.send(response);
+            }
+            catch (IOException e)
+            {
+                Logger.global().print(e);
+            }
+        });
     }
 
     protected boolean awaitConnection() throws IOException
@@ -66,6 +92,7 @@ public class Server implements Killable, Runnable
         Logger.global().print("Killing server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
         this.running = false;
         Exceptions.ignoreThrow(() -> Null.checkClose(this.serverSocket));
+        Null.checkKill(this.multicastClient);
 
         if (!InstanceKiller.isActive())
         {
@@ -75,6 +102,7 @@ public class Server implements Killable, Runnable
 
     public void start()
     {
+        Logger.global().print("Starting server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
         this.running = true;
         Threads.get().execute(this, "Server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
     }
