@@ -54,6 +54,11 @@ public class Server implements Killable, Runnable
                 Logger.global().print(e);
             }
         });
+
+        if (this.running)
+        {
+            this.multicastClient.start();
+        }
     }
 
     protected boolean awaitConnection() throws IOException
@@ -105,6 +110,7 @@ public class Server implements Killable, Runnable
         Logger.global().print("Starting server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
         this.running = true;
         Threads.get().execute(this, "Server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
+        this.multicastClient.start();
     }
 
     /**
