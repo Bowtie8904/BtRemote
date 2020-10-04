@@ -1,7 +1,6 @@
 package bt.remote.socket;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -47,18 +46,20 @@ public class Server implements Killable, Runnable
     public void setupMultiCastDiscovering(String multicastGroupAdress, int port) throws IOException
     {
         this.multicastClient = new MulticastClient(port, multicastGroupAdress);
-        this.multicastClient.onReceive(packet ->
+        this.multicastClient.onMulticastReceive(packet ->
         {
-            byte[] buf = (this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]").getBytes();
-            DatagramPacket response = new DatagramPacket(buf, buf.length, packet.getAddress(), packet.getPort());
+            String message = new String(packet.getData());
 
-            try
+            if (message.trim().equalsIgnoreCase("discover"))
             {
-                this.multicastClient.send(response);
-            }
-            catch (IOException e)
-            {
-                Logger.global().print(e);
+                try
+                {
+                    this.multicastClient.send(this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]");
+                }
+                catch (IOException e)
+                {
+                    Logger.global().print(e);
+                }
             }
         });
 

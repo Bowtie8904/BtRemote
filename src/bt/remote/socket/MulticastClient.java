@@ -17,34 +17,35 @@ import bt.utils.Null;
  * @author &#8904
  *
  */
-public class MulticastClient implements Killable, Runnable
+public class MulticastClient implements Killable
 {
     public static final String DEFAULT_GROUP_ADDRESS = "224.0.1.1";
     public static final int DEFAULT_PORT = 9000;
-    protected MulticastSocket socket = null;
-    protected Consumer<DatagramPacket> receiver;
+    protected MulticastSocket mcastSocket = null;
+    protected Consumer<DatagramPacket> mcastReceiver;
     protected boolean running;
     protected int port;
     protected InetAddress multicastGroup;
 
     public MulticastClient(int port, String multicastGroupAddress) throws IOException
     {
-        this.socket = new MulticastSocket(port);
+        this.port = port;
+        this.mcastSocket = new MulticastSocket(port);
         this.multicastGroup = InetAddress.getByName(multicastGroupAddress);
-        this.socket.joinGroup(this.multicastGroup);
-        this.socket.setTimeToLive(64);
+        this.mcastSocket.joinGroup(this.multicastGroup);
+        this.mcastSocket.setTimeToLive(255);
     }
 
     public void start()
     {
-        Logger.global().print("Starting MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.socket.getLocalPort());
+        Logger.global().print("Starting MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.mcastSocket.getLocalPort());
         this.running = true;
-        Threads.get().execute(this, "MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.socket.getLocalPort());
+        Threads.get().execute(() -> listenForMulticast(), "MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.mcastSocket.getLocalPort());
     }
 
-    public void onReceive(Consumer<DatagramPacket> receiver)
+    public void onMulticastReceive(Consumer<DatagramPacket> receiver)
     {
-        this.receiver = receiver;
+        this.mcastReceiver = receiver;
     }
 
     public void send(String msg) throws IOException
@@ -56,7 +57,7 @@ public class MulticastClient implements Killable, Runnable
 
     public void send(DatagramPacket packet) throws IOException
     {
-        this.socket.send(packet);
+        this.mcastSocket.send(packet);
     }
 
     /**
@@ -65,10 +66,10 @@ public class MulticastClient implements Killable, Runnable
     @Override
     public void kill()
     {
-        Logger.global().print("Killing MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.socket.getLocalPort());
+        Logger.global().print("Killing MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.mcastSocket.getLocalPort());
         this.running = false;
-        Null.checkRun(this.socket, () -> Exceptions.ignoreThrow(() -> this.socket.leaveGroup(this.multicastGroup)));
-        Exceptions.ignoreThrow(() -> Null.checkClose(this.socket));
+        Null.checkRun(this.mcastSocket, () -> Exceptions.ignoreThrow(() -> this.mcastSocket.leaveGroup(this.multicastGroup)));
+        Exceptions.ignoreThrow(() -> Null.checkClose(this.mcastSocket));
 
         if (!InstanceKiller.isActive())
         {
@@ -76,11 +77,7 @@ public class MulticastClient implements Killable, Runnable
         }
     }
 
-    /**
-     * @see java.lang.Runnable#run()
-     */
-    @Override
-    public void run()
+    public void listenForMulticast()
     {
         byte[] buf = new byte[512];
 
@@ -90,8 +87,8 @@ public class MulticastClient implements Killable, Runnable
 
             try
             {
-                this.socket.receive(packet);
-                Null.checkConsume(this.receiver, packet);
+                this.mcastSocket.receive(packet);
+                Null.checkConsume(this.mcastReceiver, packet);
             }
             catch (IOException e)
             {
