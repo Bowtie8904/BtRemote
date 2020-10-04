@@ -22,7 +22,7 @@ import bt.utils.Null;
 public class MulticastClient implements Killable, Runnable
 {
     public static final String DEFAULT_GROUP_ADDRESS = "230.0.0.0";
-    public static final int DEFAULT_PORT = 9000;
+    public static final int DEFAULT_PORT = 9001;
     protected MulticastSocket socket = null;
     protected Consumer<DatagramPacket> receiver;
     protected boolean running;
@@ -49,6 +49,13 @@ public class MulticastClient implements Killable, Runnable
     public void onReceive(Consumer<DatagramPacket> receiver)
     {
         this.receiver = receiver;
+    }
+
+    public void send(String msg) throws IOException
+    {
+        byte[] buf = msg.getBytes();
+        DatagramPacket packet = new DatagramPacket(buf, buf.length, this.multicastGroup, this.port);
+        send(packet);
     }
 
     public void send(DatagramPacket packet) throws IOException

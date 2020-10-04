@@ -20,6 +20,7 @@ import bt.utils.Null;
  */
 public class Server implements Killable, Runnable
 {
+    protected String name;
     protected ServerSocket serverSocket;
     protected MulticastClient multicastClient;
     protected Dispatcher eventDispatcher;
@@ -29,20 +30,26 @@ public class Server implements Killable, Runnable
     {
         this.eventDispatcher = new Dispatcher();
         this.serverSocket = new ServerSocket(port);
+        this.name = "";
         InstanceKiller.killOnShutdown(this);
     }
 
-    public void setupMultiCastDiscovering(String discoverName) throws IOException
+    public void setupMultiCastDiscovering() throws IOException
     {
-        setupMultiCastDiscovering(discoverName, MulticastClient.DEFAULT_GROUP_ADDRESS, MulticastClient.DEFAULT_PORT);
+        setupMultiCastDiscovering(MulticastClient.DEFAULT_PORT);
     }
 
-    public void setupMultiCastDiscovering(String discoverName, String multicastGroupAdress, int port) throws IOException
+    public void setupMultiCastDiscovering(int port) throws IOException
+    {
+        setupMultiCastDiscovering(MulticastClient.DEFAULT_GROUP_ADDRESS, port);
+    }
+
+    public void setupMultiCastDiscovering(String multicastGroupAdress, int port) throws IOException
     {
         this.multicastClient = new MulticastClient(port, multicastGroupAdress);
         this.multicastClient.onReceive(packet ->
         {
-            byte[] buf = discoverName.getBytes();
+            byte[] buf = (this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]").getBytes();
             DatagramPacket response = new DatagramPacket(buf, buf.length, packet.getAddress(), packet.getPort());
 
             try
@@ -94,7 +101,7 @@ public class Server implements Killable, Runnable
     @Override
     public void kill()
     {
-        Logger.global().print("Killing server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
+        Logger.global().print("Killing server " + this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]");
         this.running = false;
         Exceptions.ignoreThrow(() -> Null.checkClose(this.serverSocket));
         Null.checkKill(this.multicastClient);
@@ -107,7 +114,7 @@ public class Server implements Killable, Runnable
 
     public void start()
     {
-        Logger.global().print("Starting server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
+        Logger.global().print("Starting server " + this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]");
         this.running = true;
         Threads.get().execute(this, "Server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
         this.multicastClient.start();
@@ -133,5 +140,22 @@ public class Server implements Killable, Runnable
                 }
             }
         }
+    }
+
+    /**
+     * @return the name
+     */
+    public String getName()
+    {
+        return this.name;
+    }
+
+    /**
+     * @param name
+     *            the name to set
+     */
+    public void setName(String name)
+    {
+        this.name = name;
     }
 }
