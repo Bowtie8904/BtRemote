@@ -3,6 +3,8 @@ package bt.remote.socket;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import bt.log.Logger;
 import bt.remote.socket.evnt.NewClientConnection;
@@ -23,12 +25,14 @@ public class Server implements Killable, Runnable
     protected ServerSocket serverSocket;
     protected MulticastClient multicastClient;
     protected Dispatcher eventDispatcher;
+    protected List<Client> clients;
     protected boolean running;
 
     public Server(int port) throws IOException
     {
         this.eventDispatcher = new Dispatcher();
         this.serverSocket = new ServerSocket(port);
+        this.clients = new CopyOnWriteArrayList<>();
         this.name = "";
         InstanceKiller.killOnShutdown(this);
     }
@@ -77,6 +81,8 @@ public class Server implements Killable, Runnable
         {
             Socket socket = this.serverSocket.accept();
             Client client = createClient(socket);
+            client.setServer(this);
+            this.clients.add(client);
             this.eventDispatcher.dispatch(new NewClientConnection(client));
             client.start();
 
@@ -89,6 +95,16 @@ public class Server implements Killable, Runnable
     protected Client createClient(Socket socket) throws IOException
     {
         return new Client(socket);
+    }
+
+    protected void removeClient(Client client)
+    {
+        this.clients.remove(client);
+    }
+
+    public List<Client> getClients()
+    {
+        return this.clients;
     }
 
     public Dispatcher getEventDispatcher()

@@ -31,6 +31,7 @@ import bt.utils.StringID;
  */
 public class Client implements Killable, Runnable
 {
+    protected Server server;
     protected Socket socket;
     protected ObjectInputStream in;
     protected ObjectOutputStream out;
@@ -55,6 +56,23 @@ public class Client implements Killable, Runnable
     public Client(String host, int port) throws IOException
     {
         this(new Socket(host, port));
+    }
+
+    /**
+     * @return the server
+     */
+    public Server getServer()
+    {
+        return this.server;
+    }
+
+    /**
+     * @param server
+     *            the server to set
+     */
+    public void setServer(Server server)
+    {
+        this.server = server;
     }
 
     public void setRequestProcessor(DataProcessor dataProcessor)
@@ -149,6 +167,7 @@ public class Client implements Killable, Runnable
         Exceptions.ignoreThrow(() -> Null.checkClose(this.in));
         Exceptions.ignoreThrow(() -> Null.checkClose(this.out));
         Exceptions.ignoreThrow(() -> Null.checkClose(this.socket));
+        Null.checkRun(this.server, () -> this.server.removeClient(this));
 
         if (!InstanceKiller.isActive())
         {
