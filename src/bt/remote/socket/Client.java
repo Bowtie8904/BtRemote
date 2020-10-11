@@ -221,8 +221,7 @@ public class Client implements Killable, Runnable
                         }
                         else if (incoming instanceof KeepAlive)
                         {
-                            KeepAlive ka = (KeepAlive)incoming;
-                            sendObject(new Acknowledge(ka.getData()));
+                            handleIncomingKeepAlive((KeepAlive)incoming);
                         }
                         else if (incoming instanceof Acknowledge)
                         {
