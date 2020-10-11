@@ -93,7 +93,7 @@ public class MulticastClient implements Killable
             }
             catch (IOException e)
             {
-                Logger.global().print(e);
+                // ignore
             }
         }
     }
