@@ -80,10 +80,10 @@ public class MulticastClient implements Killable
 
     public void listenForMulticast()
     {
-        byte[] buf = new byte[512];
 
         while (this.running)
         {
+            byte[] buf = new byte[512];
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
             try
