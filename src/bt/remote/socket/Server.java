@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import bt.log.Logger;
 import bt.remote.socket.evnt.NewClientConnection;
 import bt.remote.socket.evnt.RemovedClientConnection;
 import bt.runtime.InstanceKiller;
@@ -63,7 +62,7 @@ public class Server implements Killable, Runnable
                 }
                 catch (IOException e)
                 {
-                    Logger.global().print(e);
+                    e.printStackTrace();
                 }
             }
         });
@@ -122,7 +121,7 @@ public class Server implements Killable, Runnable
     @Override
     public void kill()
     {
-        Logger.global().print("Killing server " + this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]");
+        System.out.println("Killing server " + this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]");
         this.running = false;
         Exceptions.ignoreThrow(() -> Null.checkClose(this.serverSocket));
         Null.checkKill(this.multicastClient);
@@ -135,7 +134,7 @@ public class Server implements Killable, Runnable
 
     public void start()
     {
-        Logger.global().print("Starting server " + this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]");
+        System.out.println("Starting server " + this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]");
         this.running = true;
         Threads.get().execute(this, "Server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
         Null.checkRun(this.multicastClient, () -> this.multicastClient.start());
@@ -157,7 +156,7 @@ public class Server implements Killable, Runnable
             {
                 if (this.running)
                 {
-                    Logger.global().print(e);
+                    e.printStackTrace();
                 }
             }
         }

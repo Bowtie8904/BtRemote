@@ -13,7 +13,6 @@ import java.util.Map;
 import org.json.JSONObject;
 
 import bt.io.json.JSON;
-import bt.log.Logger;
 
 /**
  * @author &#8904
@@ -298,7 +297,7 @@ public final class REST
         }
         catch (UnsupportedEncodingException e)
         {
-            Logger.global().print(e);
+            e.printStackTrace();
         }
 
         return result.toString();

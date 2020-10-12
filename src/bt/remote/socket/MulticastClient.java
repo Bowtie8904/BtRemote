@@ -6,7 +6,6 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.function.Consumer;
 
-import bt.log.Logger;
 import bt.runtime.InstanceKiller;
 import bt.scheduler.Threads;
 import bt.types.Killable;
@@ -39,7 +38,7 @@ public class MulticastClient implements Killable
 
     public void start()
     {
-        Logger.global().print("Starting MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.mcastSocket.getLocalPort());
+        System.out.println("Starting MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.mcastSocket.getLocalPort());
         this.running = true;
         Threads.get().execute(() -> listenForMulticast(), "MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.mcastSocket.getLocalPort());
     }
@@ -67,7 +66,7 @@ public class MulticastClient implements Killable
     @Override
     public void kill()
     {
-        Logger.global().print("Killing MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.mcastSocket.getLocalPort());
+        System.out.println("Killing MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.mcastSocket.getLocalPort());
         this.running = false;
         Null.checkRun(this.mcastSocket, () -> Exceptions.ignoreThrow(() -> this.mcastSocket.leaveGroup(this.multicastGroup)));
         Exceptions.ignoreThrow(() -> Null.checkClose(this.mcastSocket));

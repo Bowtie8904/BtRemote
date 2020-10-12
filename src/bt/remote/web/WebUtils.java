@@ -7,8 +7,6 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
-import bt.log.Logger;
-
 /**
  * @author &#8904
  *
@@ -43,7 +41,7 @@ public class WebUtils
         }
         catch (Exception ex)
         {
-            Logger.global().print(ex);
+            ex.printStackTrace();
         }
 
         outputStream.close();

@@ -12,7 +12,6 @@ import bt.async.Async;
 import bt.async.AsyncException;
 import bt.async.AsyncManager;
 import bt.async.Data;
-import bt.log.Logger;
 import bt.remote.socket.data.Acknowledge;
 import bt.remote.socket.data.DataProcessor;
 import bt.remote.socket.data.KeepAlive;
@@ -113,7 +112,7 @@ public class Client implements Killable, Runnable
         }
         catch (IOException e)
         {
-            Logger.global().print(e);
+            e.printStackTrace();
         }
     }
 
@@ -143,7 +142,7 @@ public class Client implements Killable, Runnable
         }
         catch (NotSerializableException e)
         {
-            Logger.global().print(e);
+            e.printStackTrace();
         }
     }
 
@@ -153,7 +152,7 @@ public class Client implements Killable, Runnable
     @Override
     public void kill()
     {
-        Logger.global().print("Killing client " + this.host + ":" + this.port);
+        System.out.println("Killing client " + this.host + ":" + this.port);
         this.running = false;
         Exceptions.ignoreThrow(() -> Null.checkClose(this.in));
         Exceptions.ignoreThrow(() -> Null.checkClose(this.out));
@@ -189,19 +188,19 @@ public class Client implements Killable, Runnable
             }
             catch (AsyncException e)
             {
-                Logger.global().print("KeepAlive acknowledge took longer than " + this.keepAliveTimeout + " ms. Shutting client down.");
+                System.err.println("KeepAlive acknowledge took longer than " + this.keepAliveTimeout + " ms. Shutting client down.");
                 this.eventDispatcher.dispatch(new ConnectionLost(this));
                 kill();
             }
             catch (SocketException sok)
             {
-                Logger.global().print("Connection broken. Client " + this.host + ":" + this.port);
+                System.err.println("Connection broken. Client " + this.host + ":" + this.port);
                 this.eventDispatcher.dispatch(new ConnectionLost(this));
                 kill();
             }
             catch (IOException e)
             {
-                Logger.global().print(e);
+                e.printStackTrace();
             }
         }
     }
@@ -247,7 +246,7 @@ public class Client implements Killable, Runnable
             }
             catch (EOFException eof)
             {
-                Logger.global().print("Connection lost. Client " + this.host + ":" + this.port);
+                System.err.println("Connection lost. Client " + this.host + ":" + this.port);
                 this.eventDispatcher.dispatch(new ConnectionLost(this));
                 kill();
             }
@@ -257,7 +256,7 @@ public class Client implements Killable, Runnable
             }
             catch (ClassNotFoundException e)
             {
-                Logger.global().print(e);
+                e.printStackTrace();
             }
         }
     }
