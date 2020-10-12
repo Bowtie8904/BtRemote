@@ -1,6 +1,7 @@
 package bt.remote.socket;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -22,6 +23,7 @@ import bt.utils.Null;
 public class Server implements Killable, Runnable
 {
     protected String name;
+    protected String host;
     protected ServerSocket serverSocket;
     protected MulticastClient multicastClient;
     protected Dispatcher eventDispatcher;
@@ -34,6 +36,7 @@ public class Server implements Killable, Runnable
         this.serverSocket = new ServerSocket(port);
         this.clients = new CopyOnWriteArrayList<>();
         this.name = "";
+        this.host = InetAddress.getLocalHost().getHostName();
         InstanceKiller.killOnShutdown(this);
     }
 
@@ -58,7 +61,7 @@ public class Server implements Killable, Runnable
             {
                 try
                 {
-                    this.multicastClient.send(this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]");
+                    this.multicastClient.send(this.name + " [" + this.host + ":" + this.serverSocket.getLocalPort() + "]");
                 }
                 catch (IOException e)
                 {
@@ -121,7 +124,7 @@ public class Server implements Killable, Runnable
     @Override
     public void kill()
     {
-        System.out.println("Killing server " + this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]");
+        System.out.println("Killing server " + this.name + " [" + this.host + ":" + this.serverSocket.getLocalPort() + "]");
         this.running = false;
         Exceptions.ignoreThrow(() -> Null.checkClose(this.serverSocket));
         Null.checkKill(this.multicastClient);
@@ -134,7 +137,7 @@ public class Server implements Killable, Runnable
 
     public void start()
     {
-        System.out.println("Starting server " + this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]");
+        System.out.println("Starting server " + this.name + " [" + this.host + ":" + this.serverSocket.getLocalPort() + "]");
         this.running = true;
         Threads.get().execute(this, "Server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
         Null.checkRun(this.multicastClient, () -> this.multicastClient.start());
