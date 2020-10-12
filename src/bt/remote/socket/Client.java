@@ -18,7 +18,9 @@ import bt.remote.socket.data.DataProcessor;
 import bt.remote.socket.data.KeepAlive;
 import bt.remote.socket.data.Request;
 import bt.remote.socket.data.Response;
+import bt.remote.socket.evnt.ConnectionLost;
 import bt.runtime.InstanceKiller;
+import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
 import bt.types.Killable;
 import bt.utils.Exceptions;
@@ -31,7 +33,6 @@ import bt.utils.StringID;
  */
 public class Client implements Killable, Runnable
 {
-    protected Server server;
     protected Socket socket;
     protected ObjectInputStream in;
     protected ObjectOutputStream out;
@@ -41,9 +42,11 @@ public class Client implements Killable, Runnable
     protected int port;
     protected long currentPing;
     protected long keepAliveTimeout = 10000;
+    protected Dispatcher eventDispatcher;
 
     public Client(Socket socket) throws IOException
     {
+        this.eventDispatcher = new Dispatcher();
         this.socket = socket;
         this.host = this.socket.getInetAddress().getHostAddress();
         this.port = this.socket.getPort();
@@ -58,21 +61,9 @@ public class Client implements Killable, Runnable
         this(new Socket(host, port));
     }
 
-    /**
-     * @return the server
-     */
-    public Server getServer()
+    public Dispatcher getEventDispatcher()
     {
-        return this.server;
-    }
-
-    /**
-     * @param server
-     *            the server to set
-     */
-    public void setServer(Server server)
-    {
-        this.server = server;
+        return this.eventDispatcher;
     }
 
     public void setRequestProcessor(DataProcessor dataProcessor)
@@ -118,7 +109,7 @@ public class Client implements Killable, Runnable
     {
         try
         {
-            sendObject(new Acknowledge(ka.getData()));
+            sendObject(new Acknowledge(new Data(String.class, "Pong", ka.getData().getID())));
         }
         catch (IOException e)
         {
@@ -167,7 +158,6 @@ public class Client implements Killable, Runnable
         Exceptions.ignoreThrow(() -> Null.checkClose(this.in));
         Exceptions.ignoreThrow(() -> Null.checkClose(this.out));
         Exceptions.ignoreThrow(() -> Null.checkClose(this.socket));
-        Null.checkRun(this.server, () -> this.server.removeClient(this));
 
         if (!InstanceKiller.isActive())
         {
@@ -200,11 +190,13 @@ public class Client implements Killable, Runnable
             catch (AsyncException e)
             {
                 Logger.global().print("KeepAlive acknowledge took longer than " + this.keepAliveTimeout + " ms. Shutting client down.");
+                this.eventDispatcher.dispatch(new ConnectionLost(this));
                 kill();
             }
             catch (SocketException sok)
             {
                 Logger.global().print("Connection broken. Client " + this.host + ":" + this.port);
+                this.eventDispatcher.dispatch(new ConnectionLost(this));
                 kill();
             }
             catch (IOException e)
@@ -256,6 +248,7 @@ public class Client implements Killable, Runnable
             catch (EOFException eof)
             {
                 Logger.global().print("Connection lost. Client " + this.host + ":" + this.port);
+                this.eventDispatcher.dispatch(new ConnectionLost(this));
                 kill();
             }
             catch (IOException io)

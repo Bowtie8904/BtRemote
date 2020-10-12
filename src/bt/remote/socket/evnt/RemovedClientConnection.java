@@ -6,14 +6,14 @@ import bt.remote.socket.ServerClient;
  * @author &#8904
  *
  */
-public class NewClientConnection
+public class RemovedClientConnection
 {
     private ServerClient client;
 
     /**
      * @param client
      */
-    public NewClientConnection(ServerClient client)
+    public RemovedClientConnection(ServerClient client)
     {
         this.client = client;
     }

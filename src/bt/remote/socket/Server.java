@@ -8,6 +8,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import bt.log.Logger;
 import bt.remote.socket.evnt.NewClientConnection;
+import bt.remote.socket.evnt.RemovedClientConnection;
 import bt.runtime.InstanceKiller;
 import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
@@ -80,7 +81,7 @@ public class Server implements Killable, Runnable
         if (!this.serverSocket.isClosed())
         {
             Socket socket = this.serverSocket.accept();
-            Client client = createClient(socket);
+            ServerClient client = createClient(socket);
             client.setServer(this);
             this.clients.add(client);
             this.eventDispatcher.dispatch(new NewClientConnection(client));
@@ -92,14 +93,17 @@ public class Server implements Killable, Runnable
         return connected;
     }
 
-    protected Client createClient(Socket socket) throws IOException
+    protected ServerClient createClient(Socket socket) throws IOException
     {
-        return new Client(socket);
+        return new ServerClient(socket);
     }
 
-    protected void removeClient(Client client)
+    protected void removeClient(ServerClient client)
     {
-        this.clients.remove(client);
+        if (this.clients.remove(client))
+        {
+            this.eventDispatcher.dispatch(new RemovedClientConnection(client));
+        }
     }
 
     public List<Client> getClients()
@@ -134,7 +138,7 @@ public class Server implements Killable, Runnable
         Logger.global().print("Starting server " + this.name + " [" + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort() + "]");
         this.running = true;
         Threads.get().execute(this, "Server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
-        this.multicastClient.start();
+        Null.checkRun(this.multicastClient, () -> this.multicastClient.start());
     }
 
     /**

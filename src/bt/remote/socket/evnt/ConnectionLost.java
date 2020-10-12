@@ -1,19 +1,19 @@
 package bt.remote.socket.evnt;
 
-import bt.remote.socket.ServerClient;
+import bt.remote.socket.Client;
 
 /**
  * @author &#8904
  *
  */
-public class NewClientConnection
+public class ConnectionLost
 {
-    private ServerClient client;
+    private Client client;
 
     /**
      * @param client
      */
-    public NewClientConnection(ServerClient client)
+    public ConnectionLost(Client client)
     {
         this.client = client;
     }
@@ -21,7 +21,7 @@ public class NewClientConnection
     /**
      * @return the client
      */
-    public ServerClient getClient()
+    public Client getClient()
     {
         return this.client;
     }
@@ -30,7 +30,7 @@ public class NewClientConnection
      * @param client
      *            the client to set
      */
-    public void setClient(ServerClient client)
+    public void setClient(Client client)
     {
         this.client = client;
     }
