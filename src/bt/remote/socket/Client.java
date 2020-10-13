@@ -197,6 +197,7 @@ public class Client implements Killable, Runnable
         boolean reconnected = false;
         int attempts = 1;
         this.eventDispatcher.dispatch(new ReconnectStarted(this));
+        closeResources();
 
         for (; attempts <= this.maxReconnectAttempts || this.maxReconnectAttempts == -1; attempts ++ )
         {
