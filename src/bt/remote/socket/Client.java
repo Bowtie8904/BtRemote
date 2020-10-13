@@ -188,15 +188,21 @@ public class Client implements Killable, Runnable
             }
             catch (AsyncException e)
             {
-                System.err.println("KeepAlive acknowledge took longer than " + this.keepAliveTimeout + " ms. Shutting client down.");
-                this.eventDispatcher.dispatch(new ConnectionLost(this));
-                kill();
+                if (this.running)
+                {
+                    System.err.println("KeepAlive acknowledge took longer than " + this.keepAliveTimeout + " ms. Shutting client down.");
+                    this.eventDispatcher.dispatch(new ConnectionLost(this));
+                    kill();
+                }
             }
             catch (SocketException sok)
             {
-                System.err.println("Connection broken. Client " + this.host + ":" + this.port);
-                this.eventDispatcher.dispatch(new ConnectionLost(this));
-                kill();
+                if (this.running)
+                {
+                    System.err.println("Connection broken. Client " + this.host + ":" + this.port);
+                    this.eventDispatcher.dispatch(new ConnectionLost(this));
+                    kill();
+                }
             }
             catch (IOException e)
             {
@@ -246,9 +252,12 @@ public class Client implements Killable, Runnable
             }
             catch (EOFException eof)
             {
-                System.err.println("Connection lost. Client " + this.host + ":" + this.port);
-                this.eventDispatcher.dispatch(new ConnectionLost(this));
-                kill();
+                if (this.running)
+                {
+                    System.err.println("Connection lost. Client " + this.host + ":" + this.port);
+                    this.eventDispatcher.dispatch(new ConnectionLost(this));
+                    kill();
+                }
             }
             catch (IOException io)
             {

@@ -79,7 +79,6 @@ public class MulticastClient implements Killable
 
     public void listenForMulticast()
     {
-
         while (this.running)
         {
             byte[] buf = new byte[512];

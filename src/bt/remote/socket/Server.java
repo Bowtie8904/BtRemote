@@ -84,6 +84,7 @@ public class Server implements Killable, Runnable
         {
             Socket socket = this.serverSocket.accept();
             ServerClient client = createClient(socket);
+            System.out.println("New client connection " + client.getHost() + ":" + client.getPort());
             client.setServer(this);
             this.clients.add(client);
             this.eventDispatcher.dispatch(new NewClientConnection(client));
