@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
 
@@ -18,6 +19,9 @@ import bt.remote.socket.data.KeepAlive;
 import bt.remote.socket.data.Request;
 import bt.remote.socket.data.Response;
 import bt.remote.socket.evnt.ConnectionLost;
+import bt.remote.socket.evnt.ReconnectFailed;
+import bt.remote.socket.evnt.ReconnectStarted;
+import bt.remote.socket.evnt.ReconnectSuccessfull;
 import bt.runtime.InstanceKiller;
 import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
@@ -36,28 +40,47 @@ public class Client implements Killable, Runnable
     protected ObjectInputStream in;
     protected ObjectOutputStream out;
     protected DataProcessor dataProcessor;
-    protected boolean running;
+    protected volatile boolean running;
     protected String host;
     protected int port;
     protected long currentPing;
     protected long keepAliveTimeout = 10000;
     protected Dispatcher eventDispatcher;
+    protected boolean autoReconnect;
+    protected int maxReconnectAttempts = -1;
 
     public Client(Socket socket) throws IOException
     {
         this.eventDispatcher = new Dispatcher();
-        this.socket = socket;
-        this.host = this.socket.getInetAddress().getHostAddress();
-        this.port = this.socket.getPort();
-        this.out = new ObjectOutputStream(this.socket.getOutputStream());
-        this.out.flush();
-        this.in = new ObjectInputStream(this.socket.getInputStream());
+        setupConnection(socket);
         InstanceKiller.killOnShutdown(this);
     }
 
     public Client(String host, int port) throws IOException
     {
         this(new Socket(host, port));
+    }
+
+    protected void setupConnection(Socket socket) throws IOException
+    {
+        this.socket = socket;
+        this.host = this.socket.getInetAddress().getHostAddress();
+        this.port = this.socket.getPort();
+        this.out = new ObjectOutputStream(this.socket.getOutputStream());
+        this.out.flush();
+        this.in = new ObjectInputStream(this.socket.getInputStream());
+    }
+
+    /**
+     * Instructs the client to automatically reconnect to the server if the connection breaks.
+     *
+     * @param maxReconnectAttempts
+     *            The maximum attempts before giving up reconnecting. Set to -1 for infinite attempts.
+     */
+    public void autoReconnect(int maxReconnectAttempts)
+    {
+        this.autoReconnect = true;
+        this.maxReconnectAttempts = maxReconnectAttempts;
     }
 
     public Dispatcher getEventDispatcher()
@@ -153,14 +176,61 @@ public class Client implements Killable, Runnable
     public void kill()
     {
         System.out.println("Killing client " + this.host + ":" + this.port);
-        this.running = false;
-        Exceptions.ignoreThrow(() -> Null.checkClose(this.in));
-        Exceptions.ignoreThrow(() -> Null.checkClose(this.out));
-        Exceptions.ignoreThrow(() -> Null.checkClose(this.socket));
+
+        closeResources();
 
         if (!InstanceKiller.isActive())
         {
             InstanceKiller.unregister(this);
+        }
+    }
+
+    protected void closeResources()
+    {
+        this.running = false;
+        Exceptions.ignoreThrow(() -> Null.checkClose(this.in));
+        Exceptions.ignoreThrow(() -> Null.checkClose(this.out));
+        Exceptions.ignoreThrow(() -> Null.checkClose(this.socket));
+    }
+
+    protected void reconnect()
+    {
+        boolean reconnected = false;
+        this.eventDispatcher.dispatch(new ReconnectStarted(this));
+
+        for (int i = 1; i <= this.maxReconnectAttempts || this.maxReconnectAttempts == -1; i ++ )
+        {
+            System.out.println("Client " + this.host + ":" + this.port + " attempting to reconnect (attempt: " + i + ")");
+
+            try
+            {
+                Socket newSocket = new Socket(this.host, this.port);
+                setupConnection(newSocket);
+                reconnected = true;
+                start();
+                break;
+            }
+            catch (ConnectException e)
+            {
+                System.err.println("Client " + this.host + ":" + this.port + " reconnect attempt " + i + " failed.");
+            }
+            catch (IOException e1)
+            {
+                e1.printStackTrace();
+                break;
+            }
+        }
+
+        if (reconnected)
+        {
+            System.out.println("Client " + this.host + ":" + this.port + " reconnect successfull after " + this.maxReconnectAttempts + " attempts.");
+            this.eventDispatcher.dispatch(new ReconnectSuccessfull(this));
+        }
+        else
+        {
+            System.err.println("Client " + this.host + ":" + this.port + " failed to reconnect after " + this.maxReconnectAttempts + " attempts.");
+            this.eventDispatcher.dispatch(new ReconnectFailed(this));
+            kill();
         }
     }
 
@@ -173,6 +243,8 @@ public class Client implements Killable, Runnable
 
     protected void sendKeepAlive()
     {
+        boolean error = false;
+
         while (this.running && !this.socket.isClosed())
         {
             Exceptions.ignoreThrow(() -> Thread.sleep(this.keepAliveTimeout));
@@ -190,9 +262,11 @@ public class Client implements Killable, Runnable
             {
                 if (this.running)
                 {
-                    System.err.println("KeepAlive acknowledge took longer than " + this.keepAliveTimeout + " ms. Shutting client down.");
+                    System.err.println("KeepAlive acknowledge took longer than " + this.keepAliveTimeout + " ms. Client " + this.host + ":" + this.port);
                     this.eventDispatcher.dispatch(new ConnectionLost(this));
-                    kill();
+                    error = true;
+                    this.running = false;
+                    break;
                 }
             }
             catch (SocketException sok)
@@ -201,12 +275,26 @@ public class Client implements Killable, Runnable
                 {
                     System.err.println("Connection broken. Client " + this.host + ":" + this.port);
                     this.eventDispatcher.dispatch(new ConnectionLost(this));
-                    kill();
+                    error = true;
+                    this.running = false;
+                    break;
                 }
             }
             catch (IOException e)
             {
                 e.printStackTrace();
+            }
+        }
+
+        if (error)
+        {
+            if (this.autoReconnect)
+            {
+                reconnect();
+            }
+            else
+            {
+                kill();
             }
         }
     }
@@ -217,6 +305,8 @@ public class Client implements Killable, Runnable
     @Override
     public void run()
     {
+        boolean error = false;
+
         while (this.running && !this.socket.isClosed())
         {
             try
@@ -256,7 +346,9 @@ public class Client implements Killable, Runnable
                 {
                     System.err.println("Connection lost. Client " + this.host + ":" + this.port);
                     this.eventDispatcher.dispatch(new ConnectionLost(this));
-                    kill();
+                    error = true;
+                    this.running = false;
+                    break;
                 }
             }
             catch (IOException io)
@@ -266,6 +358,18 @@ public class Client implements Killable, Runnable
             catch (ClassNotFoundException e)
             {
                 e.printStackTrace();
+            }
+        }
+
+        if (error)
+        {
+            if (this.autoReconnect)
+            {
+                reconnect();
+            }
+            else
+            {
+                kill();
             }
         }
     }
