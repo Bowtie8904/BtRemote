@@ -19,13 +19,13 @@ public class ServerClient extends Client
     {
         super();
         this.socket = socket;
+        this.host = this.socket.getInetAddress().getHostAddress();
+        this.port = this.socket.getPort();
     }
 
     @Override
     protected void setupConnection() throws IOException
     {
-        this.host = this.socket.getInetAddress().getHostAddress();
-        this.port = this.socket.getPort();
         this.out = new ObjectOutputStream(this.socket.getOutputStream());
         this.out.flush();
         this.in = new ObjectInputStream(this.socket.getInputStream());

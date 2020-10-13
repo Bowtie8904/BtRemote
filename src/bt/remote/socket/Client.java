@@ -204,7 +204,9 @@ public class Client implements Killable, Runnable
 
             try
             {
-                start();
+                this.running = true;
+                setupConnection();
+                startThreads();
                 reconnected = true;
                 break;
             }
