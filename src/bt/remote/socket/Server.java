@@ -27,7 +27,7 @@ public class Server implements Killable, Runnable
     protected ServerSocket serverSocket;
     protected MulticastClient multicastClient;
     protected Dispatcher eventDispatcher;
-    protected List<Client> clients;
+    protected List<ServerClient> clients;
     protected boolean running;
 
     public Server(int port) throws IOException
@@ -108,7 +108,7 @@ public class Server implements Killable, Runnable
         }
     }
 
-    public List<Client> getClients()
+    public List<ServerClient> getClients()
     {
         return this.clients;
     }
