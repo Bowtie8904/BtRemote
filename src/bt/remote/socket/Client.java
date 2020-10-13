@@ -235,8 +235,26 @@ public class Client implements Killable, Runnable
     public void start() throws IOException
     {
         this.running = true;
-        setupConnection();
-        startThreads();
+
+        try
+        {
+            setupConnection();
+            startThreads();
+        }
+        catch (ConnectException e)
+        {
+            System.err.println("Failed to connect to " + this.host + ":" + this.port + ".");
+            this.running = false;
+
+            if (this.autoReconnect)
+            {
+                reconnect();
+            }
+            else
+            {
+                kill();
+            }
+        }
     }
 
     protected void startThreads()
