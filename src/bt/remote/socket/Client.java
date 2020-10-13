@@ -49,23 +49,22 @@ public class Client implements Killable, Runnable
     protected boolean autoReconnect;
     protected int maxReconnectAttempts = -1;
 
-    public Client(Socket socket) throws IOException
+    protected Client()
     {
         this.eventDispatcher = new Dispatcher();
-        setupConnection(socket);
         InstanceKiller.killOnShutdown(this);
     }
 
     public Client(String host, int port) throws IOException
     {
-        this(new Socket(host, port));
+        this();
+        this.host = host;
+        this.port = port;
     }
 
-    protected void setupConnection(Socket socket) throws IOException
+    protected void setupConnection() throws IOException
     {
-        this.socket = socket;
-        this.host = this.socket.getInetAddress().getHostAddress();
-        this.port = this.socket.getPort();
+        this.socket = new Socket(this.host, this.port);
         this.out = new ObjectOutputStream(this.socket.getOutputStream());
         this.out.flush();
         this.in = new ObjectInputStream(this.socket.getInputStream());
@@ -196,23 +195,22 @@ public class Client implements Killable, Runnable
     protected void reconnect()
     {
         boolean reconnected = false;
+        int attempts = 1;
         this.eventDispatcher.dispatch(new ReconnectStarted(this));
 
-        for (int i = 1; i <= this.maxReconnectAttempts || this.maxReconnectAttempts == -1; i ++ )
+        for (; attempts <= this.maxReconnectAttempts || this.maxReconnectAttempts == -1; attempts ++ )
         {
-            System.out.println("Client " + this.host + ":" + this.port + " attempting to reconnect (attempt: " + i + ")");
+            System.out.println("Client " + this.host + ":" + this.port + " attempting to reconnect (attempt: " + attempts + ")");
 
             try
             {
-                Socket newSocket = new Socket(this.host, this.port);
-                setupConnection(newSocket);
-                reconnected = true;
                 start();
+                reconnected = true;
                 break;
             }
             catch (ConnectException e)
             {
-                System.err.println("Client " + this.host + ":" + this.port + " reconnect attempt " + i + " failed.");
+                System.err.println("Client " + this.host + ":" + this.port + " reconnect attempt " + attempts + " failed.");
             }
             catch (IOException e1)
             {
@@ -223,20 +221,26 @@ public class Client implements Killable, Runnable
 
         if (reconnected)
         {
-            System.out.println("Client " + this.host + ":" + this.port + " reconnect successfull after " + this.maxReconnectAttempts + " attempts.");
+            System.out.println("Client " + this.host + ":" + this.port + " reconnect successfull after " + attempts + " attempts.");
             this.eventDispatcher.dispatch(new ReconnectSuccessfull(this));
         }
         else
         {
-            System.err.println("Client " + this.host + ":" + this.port + " failed to reconnect after " + this.maxReconnectAttempts + " attempts.");
+            System.err.println("Client " + this.host + ":" + this.port + " failed to reconnect after " + attempts + " attempts.");
             this.eventDispatcher.dispatch(new ReconnectFailed(this));
             kill();
         }
     }
 
-    public void start()
+    public void start() throws IOException
     {
         this.running = true;
+        setupConnection();
+        startThreads();
+    }
+
+    protected void startThreads()
+    {
         Threads.get().execute(this, "Client " + this.host + ":" + this.port);
         Threads.get().execute(this::sendKeepAlive, "Ping-Thread " + this.host + ":" + this.port);
     }

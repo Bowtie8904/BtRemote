@@ -1,6 +1,8 @@
 package bt.remote.socket;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import bt.utils.Null;
@@ -15,12 +17,18 @@ public class ServerClient extends Client
 
     public ServerClient(Socket socket) throws IOException
     {
-        super(socket);
+        super();
+        this.socket = socket;
     }
 
-    public ServerClient(String host, int port) throws IOException
+    @Override
+    protected void setupConnection() throws IOException
     {
-        super(host, port);
+        this.host = this.socket.getInetAddress().getHostAddress();
+        this.port = this.socket.getPort();
+        this.out = new ObjectOutputStream(this.socket.getOutputStream());
+        this.out.flush();
+        this.in = new ObjectInputStream(this.socket.getInputStream());
     }
 
     /**
