@@ -19,6 +19,7 @@ import bt.remote.socket.data.KeepAlive;
 import bt.remote.socket.data.Request;
 import bt.remote.socket.data.Response;
 import bt.remote.socket.evnt.ConnectionLost;
+import bt.remote.socket.evnt.PingUpdate;
 import bt.remote.socket.evnt.ReconnectFailed;
 import bt.remote.socket.evnt.ReconnectStarted;
 import bt.remote.socket.evnt.ReconnectSuccessfull;
@@ -195,12 +196,13 @@ public class Client implements Killable, Runnable
     protected void reconnect()
     {
         boolean reconnected = false;
-        int attempts = 1;
+        int attempts = 0;
         this.eventDispatcher.dispatch(new ReconnectStarted(this));
         closeResources();
 
-        for (; attempts <= this.maxReconnectAttempts || this.maxReconnectAttempts == -1; attempts ++ )
+        while (attempts < this.maxReconnectAttempts || this.maxReconnectAttempts == -1)
         {
+            attempts ++ ;
             System.out.println("Client " + this.host + ":" + this.port + " attempting to reconnect (attempt: " + attempts + ")");
 
             try
@@ -282,6 +284,7 @@ public class Client implements Killable, Runnable
                 sendObject(new KeepAlive(data));
                 async.get(this.keepAliveTimeout);
                 this.currentPing = System.currentTimeMillis() - sent;
+                this.eventDispatcher.dispatch(new PingUpdate(this.currentPing));
             }
             catch (AsyncException e)
             {
@@ -322,6 +325,11 @@ public class Client implements Killable, Runnable
                 kill();
             }
         }
+    }
+
+    public boolean isConnected()
+    {
+        return this.socket != null && this.socket.isConnected() && !this.socket.isClosed();
     }
 
     /**
