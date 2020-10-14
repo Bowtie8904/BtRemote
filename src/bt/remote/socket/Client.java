@@ -32,30 +32,73 @@ import bt.utils.Null;
 import bt.utils.StringID;
 
 /**
- * @author &#8904
+ * A class wrapping a {@link Socket}. This class should be used on client side in a client-server connection.
  *
+ * @author &#8904
  */
 public class Client implements Killable, Runnable
 {
+    /** The socket used to communicate with the server. */
     protected Socket socket;
+
+    /** The stream for incoming objects. */
     protected ObjectInputStream in;
+
+    /** The stream for outgoing objects. */
     protected ObjectOutputStream out;
+
+    /** A processor for incoming data from requests. */
     protected DataProcessor dataProcessor;
+
+    /** A flag to indicate if this client is currently or should be running (=waiting for incoming messages). */
     protected volatile boolean running;
+
+    /** The hostname of the server that this client is connected to. */
     protected String host;
+
+    /** The port of the server that this client is connected to. */
     protected int port;
+
+    /** The current latency. */
     protected long currentPing;
+
+    /**
+     * The time between keepalives in milliseconds. This is also the time that is waited for a keepalive response before
+     * deeming the connection as broken.
+     */
     protected long keepAliveTimeout = 10000;
+
+    /** A dispatcher to distribute client related events. */
     protected Dispatcher eventDispatcher;
+
+    /** Indicates that this client should attempt reconnecting if the connection is lost. */
     protected boolean autoReconnect;
+
+    /** The maximum number of reconnect attempts before giving up. -1 for infinite attempts. */
     protected int maxReconnectAttempts = -1;
 
+    /**
+     * Creates a new instance, initializes the {@link #eventDispatcher} and adds the instance to the
+     * {@link InstanceKiller}.
+     */
     protected Client()
     {
         this.eventDispatcher = new Dispatcher();
         InstanceKiller.killOnShutdown(this);
     }
 
+    /**
+     * Creates a new instance with the given hostname and port of the desired server.
+     *
+     * <p>
+     * This constructor will not create an actual {@link Socket} yet, for that the {@link Client#start()} method needs
+     * to be called.
+     * </p>
+     *
+     * @param host
+     * @param port
+     * @throws IOException
+     */
     public Client(String host, int port) throws IOException
     {
         this();
@@ -83,11 +126,32 @@ public class Client implements Killable, Runnable
         this.maxReconnectAttempts = maxReconnectAttempts;
     }
 
+    /**
+     * Gets the {@link Dispatcher} used to ditribute events of the client.
+     *
+     * <p>
+     * Possible events:
+     * <ul>
+     * <li>{@link PingUpdate}</li>
+     * <li>{@link ConnectionLost}</li>
+     * <li>{@link ReconnectStarted}</li>
+     * <li>{@link ReconnectFailed}</li>
+     * <li>{@link ReconnectSuccessfull}</li>
+     * </ul>
+     * </p>
+     *
+     * @return
+     */
     public Dispatcher getEventDispatcher()
     {
         return this.eventDispatcher;
     }
 
+    /**
+     * Sets a processor which will receive the data for every incoming request.
+     *
+     * @param dataProcessor
+     */
     public void setRequestProcessor(DataProcessor dataProcessor)
     {
         this.dataProcessor = dataProcessor;
@@ -416,15 +480,6 @@ public class Client implements Killable, Runnable
     }
 
     /**
-     * @param host
-     *            the host to set
-     */
-    public void setHost(String host)
-    {
-        this.host = host;
-    }
-
-    /**
      * @return the port
      */
     public int getPort()
@@ -433,15 +488,9 @@ public class Client implements Killable, Runnable
     }
 
     /**
-     * @param port
-     *            the port to set
-     */
-    public void setPort(int port)
-    {
-        this.port = port;
-    }
-
-    /**
+     * Gets the time between keepalives in milliseconds. This is also the time that is waited for a keepalive response
+     * before deeming the connection as broken.
+     *
      * @return the keepAliveTimeout
      */
     public long getKeepAliveTimeout()
@@ -450,6 +499,9 @@ public class Client implements Killable, Runnable
     }
 
     /**
+     * Sets the time between keepalives in milliseconds. This is also the time that is waited for a keepalive response
+     * before deeming the connection as broken.
+     *
      * @param keepAliveTimeout
      *            the keepAliveTimeout to set
      */

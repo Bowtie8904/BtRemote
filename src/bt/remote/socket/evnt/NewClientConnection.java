@@ -3,8 +3,9 @@ package bt.remote.socket.evnt;
 import bt.remote.socket.ServerClient;
 
 /**
- * @author &#8904
+ * Indicates that a new client has connected to a server.
  *
+ * @author &#8904
  */
 public class NewClientConnection
 {
