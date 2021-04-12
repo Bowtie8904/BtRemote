@@ -1,28 +1,11 @@
 package bt.remote.socket;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.NotSerializableException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.ConnectException;
-import java.net.Socket;
-import java.net.SocketException;
-
 import bt.async.Async;
 import bt.async.AsyncException;
 import bt.async.AsyncManager;
 import bt.async.Data;
-import bt.remote.socket.data.Acknowledge;
-import bt.remote.socket.data.DataProcessor;
-import bt.remote.socket.data.KeepAlive;
-import bt.remote.socket.data.Request;
-import bt.remote.socket.data.Response;
-import bt.remote.socket.evnt.ConnectionLost;
-import bt.remote.socket.evnt.PingUpdate;
-import bt.remote.socket.evnt.ReconnectFailed;
-import bt.remote.socket.evnt.ReconnectStarted;
-import bt.remote.socket.evnt.ReconnectSuccessfull;
+import bt.remote.socket.data.*;
+import bt.remote.socket.evnt.*;
 import bt.runtime.InstanceKiller;
 import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
@@ -30,6 +13,11 @@ import bt.types.Killable;
 import bt.utils.Exceptions;
 import bt.utils.Null;
 import bt.utils.StringID;
+
+import java.io.*;
+import java.net.ConnectException;
+import java.net.Socket;
+import java.net.SocketException;
 
 /**
  * A class wrapping a {@link Socket}. This class should be used on client side in a client-server connection.

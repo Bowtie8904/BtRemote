@@ -49,6 +49,8 @@ public final class REST
                                "Mozilla/5.0");
         con.setRequestProperty("Accept",
                                "application/json");
+        con.setConnectTimeout(30000);
+        con.setReadTimeout(30000);
 
         if (headers != null)
         {
@@ -131,6 +133,8 @@ public final class REST
                                "Mozilla/5.0");
         con.setRequestProperty("Accept",
                                "application/json");
+        con.setConnectTimeout(30000);
+        con.setReadTimeout(30000);
 
         if (headers != null)
         {
@@ -229,6 +233,8 @@ public final class REST
                                "Mozilla/5.0");
         con.setRequestProperty("Accept",
                                "application/json");
+        con.setConnectTimeout(30000);
+        con.setReadTimeout(30000);
 
         if (headers != null)
         {
