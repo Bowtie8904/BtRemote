@@ -11,7 +11,7 @@ import bt.utils.Null;
  * @author &#8904
  *
  */
-public class ServerClient extends Client
+public class ServerClient extends ObjectClient
 {
     protected Server server;
 
