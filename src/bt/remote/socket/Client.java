@@ -1,6 +1,7 @@
 package bt.remote.socket;
 
 import bt.remote.socket.evnt.*;
+import bt.remote.socket.exc.WrappedClientException;
 import bt.runtime.InstanceKiller;
 import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
@@ -65,7 +66,7 @@ public abstract class Client implements Killable, Runnable
      * @param port
      * @throws IOException
      */
-    public Client(String host, int port) throws IOException
+    public Client(String host, int port)
     {
         this();
         this.host = host;
@@ -95,11 +96,17 @@ public abstract class Client implements Killable, Runnable
      * <p>
      * Possible events:
      * <ul>
-     * <li>{@link PingUpdate}</li>
-     * <li>{@link ConnectionLost}</li>
-     * <li>{@link ReconnectStarted}</li>
-     * <li>{@link ReconnectFailed}</li>
-     * <li>{@link ReconnectSuccessfull}</li>
+     * <li>{@link PingUpdate} if the client has a new value for ping. Might not be supported by all clients</li>
+     * <li>{@link KeepAliveTimeout} if a sent keep alive message was not answered in time. Might not be supported by all clients</li>
+     * <li>{@link ConnectionFailed} initial connection to the host failed</li>
+     * <li>{@link ConnectionLost} previously established connection was lost</li>
+     * <li>{@link ReconnectStarted} reconnect efforts were started</li>
+     * <li>{@link ReconnectFailed} reconnect efforts failed</li>
+     * <li>{@link ReconnectSuccessfull} reconnect efforts were successful</li>
+     * <li>{@link ReconnectAttempt} a specific reconnect attempt was started</li>
+     * <li>{@link ReconnectAttemptFailed} a specific reconnect attempt failed</li>
+     * <li>{@link ClientKilled} the client was destroyed through a call to {@link #kill()}</li>
+     * <li>{@link UnspecifiedException} less specific exception was thrown somewhere in this class</li>
      * </ul>
      * </p>
      *
@@ -116,14 +123,14 @@ public abstract class Client implements Killable, Runnable
     @Override
     public void kill()
     {
-        System.out.println("Killing client " + this.host + ":" + this.port);
-
         closeResources();
 
         if (!InstanceKiller.isActive())
         {
             InstanceKiller.unregister(this);
         }
+
+        this.eventDispatcher.dispatch(new ClientKilled(this));
     }
 
     protected void closeResources()
@@ -138,11 +145,12 @@ public abstract class Client implements Killable, Runnable
         int attempts = 0;
         this.eventDispatcher.dispatch(new ReconnectStarted(this));
         closeResources();
+        Exception failureReason = null;
 
         while (attempts < this.maxReconnectAttempts || this.maxReconnectAttempts == -1)
         {
             attempts ++ ;
-            System.out.println("Client " + this.host + ":" + this.port + " attempting to reconnect (attempt: " + attempts + ")");
+            this.eventDispatcher.dispatch(new ReconnectAttempt(this, attempts, this.maxReconnectAttempts));
 
             try
             {
@@ -154,29 +162,29 @@ public abstract class Client implements Killable, Runnable
             }
             catch (ConnectException e)
             {
-                System.err.println("Client " + this.host + ":" + this.port + " reconnect attempt " + attempts + " failed.");
+                dispatchExceptionEvent(new ReconnectAttemptFailed(this, e, attempts, this.maxReconnectAttempts), false);
+                failureReason = e;
             }
             catch (IOException e1)
             {
-                e1.printStackTrace();
+                dispatchExceptionEvent(new ReconnectAttemptFailed(this, e1, attempts, this.maxReconnectAttempts), false);
+                failureReason = e1;
                 break;
             }
         }
 
         if (reconnected)
         {
-            System.out.println("Client " + this.host + ":" + this.port + " reconnect successfull after " + attempts + " attempts.");
             this.eventDispatcher.dispatch(new ReconnectSuccessfull(this));
         }
         else
         {
-            System.err.println("Client " + this.host + ":" + this.port + " failed to reconnect after " + attempts + " attempts.");
-            this.eventDispatcher.dispatch(new ReconnectFailed(this));
+            dispatchExceptionEvent(new ReconnectFailed(this, failureReason), true);
             kill();
         }
     }
 
-    public void start() throws IOException
+    public void start()
     {
         this.running = true;
 
@@ -185,17 +193,18 @@ public abstract class Client implements Killable, Runnable
             setupConnection();
             startThreads();
         }
-        catch (ConnectException e)
+        catch (IOException e)
         {
-            System.err.println("Failed to connect to " + this.host + ":" + this.port + ".");
             this.running = false;
 
             if (this.autoReconnect)
             {
+                dispatchExceptionEvent(new ConnectionFailed(this, e), false);
                 reconnect();
             }
             else
             {
+                dispatchExceptionEvent(new ConnectionFailed(this, e), true);
                 kill();
             }
         }
@@ -229,8 +238,7 @@ public abstract class Client implements Killable, Runnable
             {
                 if (this.running)
                 {
-                    System.err.println("Connection lost. Client " + this.host + ":" + this.port);
-                    this.eventDispatcher.dispatch(new ConnectionLost(this));
+                    dispatchExceptionEvent(new ConnectionLost(this, eof), true);
                     error = true;
                     this.running = false;
                     break;
@@ -238,8 +246,7 @@ public abstract class Client implements Killable, Runnable
             }
             catch (IOException io)
             {
-                io.printStackTrace();
-                // ignore
+                dispatchExceptionEvent(new UnspecifiedException(this, io), false);
             }
         }
 
@@ -253,6 +260,16 @@ public abstract class Client implements Killable, Runnable
             {
                 kill();
             }
+        }
+    }
+
+    protected void dispatchExceptionEvent(ClientExceptionEvent event, boolean requiresHandling)
+    {
+        int dispatched = this.eventDispatcher.dispatch(event);
+
+        if (requiresHandling && dispatched == 0)
+        {
+            throw new WrappedClientException(event.getException());
         }
     }
 

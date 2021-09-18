@@ -6,32 +6,14 @@ import bt.remote.socket.Client;
  * @author &#8904
  *
  */
-public class ReconnectFailed
+public class ReconnectFailed extends ClientExceptionEvent
 {
-    private Client client;
-
     /**
      * @param client
+     * @param e
      */
-    public ReconnectFailed(Client client)
+    public ReconnectFailed(Client client, Exception e)
     {
-        this.client = client;
-    }
-
-    /**
-     * @return the client
-     */
-    public Client getClient()
-    {
-        return this.client;
-    }
-
-    /**
-     * @param client
-     *            the client to set
-     */
-    public void setClient(Client client)
-    {
-        this.client = client;
+        super(client, e);
     }
 }

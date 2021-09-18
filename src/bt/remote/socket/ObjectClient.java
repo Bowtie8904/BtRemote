@@ -6,7 +6,9 @@ import bt.async.AsyncManager;
 import bt.async.Data;
 import bt.remote.socket.data.*;
 import bt.remote.socket.evnt.ConnectionLost;
+import bt.remote.socket.evnt.KeepAliveTimeout;
 import bt.remote.socket.evnt.PingUpdate;
+import bt.remote.socket.evnt.UnspecifiedException;
 import bt.runtime.InstanceKiller;
 import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
@@ -57,7 +59,7 @@ public class ObjectClient extends Client
      * @param port
      * @throws IOException
      */
-    public ObjectClient(String host, int port) throws IOException
+    public ObjectClient(String host, int port)
     {
         super(host, port);
     }
@@ -89,6 +91,8 @@ public class ObjectClient extends Client
     protected void sendKeepAlive()
     {
         boolean error = false;
+        boolean keepAliveError = false;
+        Exception failureReason = null;
 
         while (this.running && this.sendKeepAlives && !this.socket.isClosed())
         {
@@ -108,10 +112,10 @@ public class ObjectClient extends Client
             {
                 if (this.running)
                 {
-                    System.err.println("KeepAlive acknowledge took longer than " + this.keepAliveTimeout + " ms. Client " + this.host + ":" + this.port);
-                    this.eventDispatcher.dispatch(new ConnectionLost(this));
                     error = true;
+                    keepAliveError = true;
                     this.running = false;
+                    failureReason = e;
                     break;
                 }
             }
@@ -119,16 +123,15 @@ public class ObjectClient extends Client
             {
                 if (this.running)
                 {
-                    System.err.println("Connection broken. Client " + this.host + ":" + this.port);
-                    this.eventDispatcher.dispatch(new ConnectionLost(this));
                     error = true;
                     this.running = false;
+                    failureReason = sok;
                     break;
                 }
             }
             catch (IOException e)
             {
-                e.printStackTrace();
+                dispatchExceptionEvent(new UnspecifiedException(this, e), false);
             }
         }
 
@@ -136,10 +139,28 @@ public class ObjectClient extends Client
         {
             if (this.autoReconnect)
             {
+                if (keepAliveError)
+                {
+                    dispatchExceptionEvent(new KeepAliveTimeout(this, failureReason, this.keepAliveTimeout), false);
+                }
+                else
+                {
+                    dispatchExceptionEvent(new ConnectionLost(this, failureReason), false);
+                }
+
                 reconnect();
             }
             else
             {
+                if (keepAliveError)
+                {
+                    dispatchExceptionEvent(new KeepAliveTimeout(this, failureReason, this.keepAliveTimeout), true);
+                }
+                else
+                {
+                    dispatchExceptionEvent(new ConnectionLost(this, failureReason), true);
+                }
+
                 kill();
             }
         }
@@ -206,7 +227,7 @@ public class ObjectClient extends Client
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            dispatchExceptionEvent(new UnspecifiedException(this, e), false);
         }
     }
 
@@ -236,7 +257,7 @@ public class ObjectClient extends Client
         }
         catch (NotSerializableException e)
         {
-            e.printStackTrace();
+            dispatchExceptionEvent(new UnspecifiedException(this, e), false);
         }
     }
 
@@ -269,7 +290,7 @@ public class ObjectClient extends Client
         }
         catch (ClassNotFoundException e)
         {
-            e.printStackTrace();
+            dispatchExceptionEvent(new UnspecifiedException(this, e), false);
         }
     }
 
@@ -300,7 +321,7 @@ public class ObjectClient extends Client
         }
         catch (IOException e)
         {
-            // ignore
+            dispatchExceptionEvent(new UnspecifiedException(this, e), false);
         }
     }
 

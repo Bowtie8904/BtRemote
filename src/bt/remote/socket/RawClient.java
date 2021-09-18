@@ -1,6 +1,7 @@
 package bt.remote.socket;
 
 import bt.remote.socket.data.*;
+import bt.remote.socket.evnt.UnspecifiedException;
 import bt.scheduler.Threads;
 import bt.utils.Exceptions;
 import bt.utils.Null;
@@ -42,7 +43,7 @@ public class RawClient extends Client
      * @param port
      * @throws IOException
      */
-    public RawClient(String host, int port) throws IOException
+    public RawClient(String host, int port)
     {
         super(host, port);
         setupDefaultDataReader();
@@ -60,15 +61,9 @@ public class RawClient extends Client
             int bytes = 0;
             int messageLength = 0;
 
-            try
-            {
-                bytes = in.read(data);
-                data = Arrays.copyOf(data, bytes);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
+            bytes = in.read(data);
+            data = Arrays.copyOf(data, bytes);
+
 
             return data;
         });
@@ -126,7 +121,7 @@ public class RawClient extends Client
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            dispatchExceptionEvent(new UnspecifiedException(this, e), false);
         }
     }
 
