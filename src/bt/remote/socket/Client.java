@@ -98,6 +98,7 @@ public abstract class Client implements Killable, Runnable
      * <ul>
      * <li>{@link PingUpdate} if the client has a new value for ping. Might not be supported by all clients</li>
      * <li>{@link KeepAliveTimeout} if a sent keep alive message was not answered in time. Might not be supported by all clients</li>
+     * <li>{@link ConnectionSuccessfull} initial connection to the host succeeded</li>
      * <li>{@link ConnectionFailed} initial connection to the host failed</li>
      * <li>{@link ConnectionLost} previously established connection was lost</li>
      * <li>{@link ReconnectStarted} reconnect efforts were started</li>
@@ -192,6 +193,7 @@ public abstract class Client implements Killable, Runnable
         {
             setupConnection();
             startThreads();
+            this.eventDispatcher.dispatch(new ConnectionSuccessfull(this));
         }
         catch (IOException e)
         {
