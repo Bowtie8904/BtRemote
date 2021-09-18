@@ -196,17 +196,8 @@ public abstract class Client implements Killable, Runnable
         catch (IOException e)
         {
             this.running = false;
-
-            if (this.autoReconnect)
-            {
-                dispatchExceptionEvent(new ConnectionFailed(this, e), false);
-                reconnect();
-            }
-            else
-            {
-                dispatchExceptionEvent(new ConnectionFailed(this, e), true);
-                kill();
-            }
+            dispatchExceptionEvent(new ConnectionFailed(this, e), true);
+            kill();
         }
     }
 
