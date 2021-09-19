@@ -12,6 +12,7 @@ import bt.utils.Null;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.net.SocketException;
 
 /**
  * A class wrapping a {@link Socket}. This class should be used on client side in a client-server connection.
@@ -140,7 +141,7 @@ public abstract class Client implements Killable, Runnable
         Exceptions.ignoreThrow(() -> Null.checkClose(this.socket));
     }
 
-    protected void reconnect()
+    protected synchronized void reconnect()
     {
         boolean reconnected = false;
         int attempts = 0;
@@ -234,6 +235,16 @@ public abstract class Client implements Killable, Runnable
                     dispatchExceptionEvent(new ConnectionLost(this, eof), false);
                     error = true;
                     this.running = false;
+                    break;
+                }
+            }
+            catch (SocketException e)
+            {
+                if (this.running)
+                {
+                    dispatchExceptionEvent(new ConnectionLost(this, e), false);
+                    this.running = false;
+                    kill();
                     break;
                 }
             }
