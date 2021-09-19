@@ -113,7 +113,7 @@ public class RawClient extends Client
         }
     }
 
-    protected synchronized void send(byte[] data)
+    public synchronized void send(byte[] data)
     {
         try
         {
