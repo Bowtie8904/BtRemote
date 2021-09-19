@@ -231,7 +231,7 @@ public abstract class Client implements Killable, Runnable
             {
                 if (this.running)
                 {
-                    dispatchExceptionEvent(new ConnectionLost(this, eof), true);
+                    dispatchExceptionEvent(new ConnectionLost(this, eof), false);
                     error = true;
                     this.running = false;
                     break;
