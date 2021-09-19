@@ -62,8 +62,13 @@ public class RawClient extends Client
             int messageLength = 0;
 
             bytes = in.read(data);
-            data = Arrays.copyOf(data, bytes);
 
+            if (bytes == -1)
+            {
+                throw new EOFException("Reached end of stream");
+            }
+
+            data = Arrays.copyOf(data, bytes);
 
             return data;
         });
