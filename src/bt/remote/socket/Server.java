@@ -7,11 +7,7 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import bt.remote.socket.evnt.client.ClientExceptionEvent;
-import bt.remote.socket.evnt.client.UnspecifiedClientException;
 import bt.remote.socket.evnt.mcast.MulticastClientEvent;
-import bt.remote.socket.evnt.mcast.MulticastClientKilled;
-import bt.remote.socket.evnt.mcast.MulticastClientStarted;
 import bt.remote.socket.evnt.server.*;
 import bt.remote.socket.exc.WrappedException;
 import bt.runtime.InstanceKiller;
@@ -54,6 +50,8 @@ public class Server implements Killable, Runnable
     /** A flag to indicate if this server is currently or should be running (=waiting for new connections). */
     protected volatile boolean running;
 
+    protected int port;
+
     /**
      * Creates a new server and binds it to localhost and the given port.
      *
@@ -64,6 +62,7 @@ public class Server implements Killable, Runnable
     public Server(int port) throws IOException
     {
         InstanceKiller.killOnShutdown(this);
+        this.port = port;
         this.eventDispatcher = new Dispatcher();
         this.serverSocket = new ServerSocket(port);
         this.clients = new CopyOnWriteArrayList<>();
@@ -313,5 +312,15 @@ public class Server implements Killable, Runnable
     public void setName(String name)
     {
         this.name = name;
+    }
+
+    public int getPort()
+    {
+        return port;
+    }
+
+    public String getHost()
+    {
+        return host;
     }
 }
