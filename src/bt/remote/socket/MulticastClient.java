@@ -58,6 +58,7 @@ public class MulticastClient implements Killable
      */
     public MulticastClient(int port, String multicastGroupAddress) throws IOException
     {
+        this.eventDispatcher = new Dispatcher();
         InstanceKiller.killOnShutdown(this);
         this.port = port;
         this.mcastSocket = new MulticastSocket(port);
