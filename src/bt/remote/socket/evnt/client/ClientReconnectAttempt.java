@@ -1,8 +1,8 @@
-package bt.remote.socket.evnt;
+package bt.remote.socket.evnt.client;
 
 import bt.remote.socket.Client;
 
-public class ReconnectAttempt extends ClientEvent
+public class ClientReconnectAttempt extends ClientEvent
 {
     private int attempt;
     private int maxAttempts;
@@ -10,7 +10,7 @@ public class ReconnectAttempt extends ClientEvent
     /**
      * @param client
      */
-    public ReconnectAttempt(Client client, int attempt, int maxAttempts)
+    public ClientReconnectAttempt(Client client, int attempt, int maxAttempts)
     {
         super(client);
         this.attempt = attempt;

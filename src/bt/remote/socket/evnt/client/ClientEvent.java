@@ -1,4 +1,4 @@
-package bt.remote.socket.evnt;
+package bt.remote.socket.evnt.client;
 
 import bt.remote.socket.Client;
 

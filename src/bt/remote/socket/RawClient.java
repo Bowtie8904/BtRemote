@@ -1,7 +1,7 @@
 package bt.remote.socket;
 
 import bt.remote.socket.data.*;
-import bt.remote.socket.evnt.UnspecifiedException;
+import bt.remote.socket.evnt.client.UnspecifiedClientException;
 import bt.scheduler.Threads;
 import bt.utils.Exceptions;
 import bt.utils.Null;
@@ -126,7 +126,7 @@ public class RawClient extends Client
         }
         catch (IOException e)
         {
-            dispatchExceptionEvent(new UnspecifiedException(this, e), false);
+            dispatchExceptionEvent(new UnspecifiedClientException(this, e), false);
         }
     }
 

@@ -5,12 +5,10 @@ import bt.async.AsyncException;
 import bt.async.AsyncManager;
 import bt.async.Data;
 import bt.remote.socket.data.*;
-import bt.remote.socket.evnt.ConnectionLost;
-import bt.remote.socket.evnt.KeepAliveTimeout;
-import bt.remote.socket.evnt.PingUpdate;
-import bt.remote.socket.evnt.UnspecifiedException;
-import bt.runtime.InstanceKiller;
-import bt.runtime.evnt.Dispatcher;
+import bt.remote.socket.evnt.client.ClientConnectionLost;
+import bt.remote.socket.evnt.client.ClientKeepAliveTimeout;
+import bt.remote.socket.evnt.client.ClientPingUpdate;
+import bt.remote.socket.evnt.client.UnspecifiedClientException;
 import bt.scheduler.Threads;
 import bt.utils.Exceptions;
 import bt.utils.Null;
@@ -106,7 +104,7 @@ public class ObjectClient extends Client
                 sendObject(new KeepAlive(data));
                 async.get(this.keepAliveTimeout);
                 this.currentPing = System.currentTimeMillis() - sent;
-                this.eventDispatcher.dispatch(new PingUpdate(this.currentPing));
+                this.eventDispatcher.dispatch(new ClientPingUpdate(this, this.currentPing));
             }
             catch (AsyncException e)
             {
@@ -131,7 +129,7 @@ public class ObjectClient extends Client
             }
             catch (IOException e)
             {
-                dispatchExceptionEvent(new UnspecifiedException(this, e), false);
+                dispatchExceptionEvent(new UnspecifiedClientException(this, e), false);
             }
         }
 
@@ -141,11 +139,11 @@ public class ObjectClient extends Client
             {
                 if (keepAliveError)
                 {
-                    dispatchExceptionEvent(new KeepAliveTimeout(this, failureReason, this.keepAliveTimeout), false);
+                    dispatchExceptionEvent(new ClientKeepAliveTimeout(this, failureReason, this.keepAliveTimeout), false);
                 }
                 else
                 {
-                    dispatchExceptionEvent(new ConnectionLost(this, failureReason), false);
+                    dispatchExceptionEvent(new ClientConnectionLost(this, failureReason), false);
                 }
 
                 reconnect();
@@ -154,11 +152,11 @@ public class ObjectClient extends Client
             {
                 if (keepAliveError)
                 {
-                    dispatchExceptionEvent(new KeepAliveTimeout(this, failureReason, this.keepAliveTimeout), true);
+                    dispatchExceptionEvent(new ClientKeepAliveTimeout(this, failureReason, this.keepAliveTimeout), true);
                 }
                 else
                 {
-                    dispatchExceptionEvent(new ConnectionLost(this, failureReason), true);
+                    dispatchExceptionEvent(new ClientConnectionLost(this, failureReason), true);
                 }
 
                 kill();
@@ -227,7 +225,7 @@ public class ObjectClient extends Client
         }
         catch (IOException e)
         {
-            dispatchExceptionEvent(new UnspecifiedException(this, e), false);
+            dispatchExceptionEvent(new UnspecifiedClientException(this, e), false);
         }
     }
 
@@ -257,7 +255,7 @@ public class ObjectClient extends Client
         }
         catch (NotSerializableException e)
         {
-            dispatchExceptionEvent(new UnspecifiedException(this, e), false);
+            dispatchExceptionEvent(new UnspecifiedClientException(this, e), false);
         }
     }
 
@@ -290,7 +288,7 @@ public class ObjectClient extends Client
         }
         catch (ClassNotFoundException e)
         {
-            dispatchExceptionEvent(new UnspecifiedException(this, e), false);
+            dispatchExceptionEvent(new UnspecifiedClientException(this, e), false);
         }
     }
 
@@ -321,7 +319,7 @@ public class ObjectClient extends Client
         }
         catch (IOException e)
         {
-            dispatchExceptionEvent(new UnspecifiedException(this, e), false);
+            dispatchExceptionEvent(new UnspecifiedClientException(this, e), false);
         }
     }
 

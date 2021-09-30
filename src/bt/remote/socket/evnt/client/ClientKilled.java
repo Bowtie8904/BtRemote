@@ -1,4 +1,4 @@
-package bt.remote.socket.evnt;
+package bt.remote.socket.evnt.client;
 
 import bt.remote.socket.Client;
 
@@ -6,12 +6,12 @@ import bt.remote.socket.Client;
  * @author &#8904
  *
  */
-public class ReconnectSuccessfull extends ClientEvent
+public class ClientKilled extends ClientEvent
 {
     /**
      * @param client
      */
-    public ReconnectSuccessfull(Client client)
+    public ClientKilled(Client client)
     {
         super(client);
     }

@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+import bt.remote.socket.evnt.server.ServerClientKilled;
 import bt.utils.Null;
 
 /**
@@ -56,5 +57,6 @@ public class ServerClient extends ObjectClient
     {
         super.kill();
         Null.checkRun(this.server, () -> this.server.removeClient(this));
+        this.server.getEventDispatcher().dispatch(new ServerClientKilled(this.server, this));
     }
 }

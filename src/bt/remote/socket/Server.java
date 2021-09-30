@@ -7,8 +7,13 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import bt.remote.socket.evnt.NewClientConnection;
-import bt.remote.socket.evnt.RemovedClientConnection;
+import bt.remote.socket.evnt.client.ClientExceptionEvent;
+import bt.remote.socket.evnt.client.UnspecifiedClientException;
+import bt.remote.socket.evnt.mcast.MulticastClientEvent;
+import bt.remote.socket.evnt.mcast.MulticastClientKilled;
+import bt.remote.socket.evnt.mcast.MulticastClientStarted;
+import bt.remote.socket.evnt.server.*;
+import bt.remote.socket.exc.WrappedException;
 import bt.runtime.InstanceKiller;
 import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
@@ -116,6 +121,10 @@ public class Server implements Killable, Runnable
     public void setupMultiCastDiscovering(String multicastGroupAdress, int port) throws IOException
     {
         this.multicastClient = new MulticastClient(port, multicastGroupAdress);
+
+        // forwarding events to this instances dispatcher because this client is quite encapsuled
+        this.multicastClient.getEventDispatcher().subscribeTo(MulticastClientEvent.class, this.eventDispatcher::dispatch);
+
         this.multicastClient.onMulticastReceive(packet ->
         {
             String message = new String(packet.getData());
@@ -128,7 +137,7 @@ public class Server implements Killable, Runnable
                 }
                 catch (IOException e)
                 {
-                    e.printStackTrace();
+                    dispatchExceptionEvent(new UnspecifiedServerException(this, e), false);
                 }
             }
         });
@@ -154,10 +163,9 @@ public class Server implements Killable, Runnable
         {
             Socket socket = this.serverSocket.accept();
             ServerClient client = createClient(socket);
-            System.out.println("New client connection " + client.getHost() + ":" + client.getPort());
             client.setServer(this);
             this.clients.add(client);
-            this.eventDispatcher.dispatch(new NewClientConnection(client));
+            this.eventDispatcher.dispatch(new NewClientConnection(this, client));
             client.start();
 
             connected = true;
@@ -186,7 +194,7 @@ public class Server implements Killable, Runnable
     {
         if (this.clients.remove(client))
         {
-            this.eventDispatcher.dispatch(new RemovedClientConnection(client));
+            this.eventDispatcher.dispatch(new RemovedClientConnection(this, client));
         }
     }
 
@@ -225,7 +233,6 @@ public class Server implements Killable, Runnable
     @Override
     public void kill()
     {
-        System.out.println("Killing server " + this.name + " [" + this.host + ":" + this.serverSocket.getLocalPort() + "]");
         this.running = false;
 
         if (!InstanceKiller.isActive())
@@ -240,6 +247,7 @@ public class Server implements Killable, Runnable
 
         Exceptions.ignoreThrow(() -> Null.checkClose(this.serverSocket));
         Null.checkKill(this.multicastClient);
+        this.eventDispatcher.dispatch(new ServerKilled(this));
     }
 
     /**
@@ -252,10 +260,10 @@ public class Server implements Killable, Runnable
      */
     public void start()
     {
-        System.out.println("Starting server " + this.name + " [" + this.host + ":" + this.serverSocket.getLocalPort() + "]");
         this.running = true;
         Threads.get().execute(this, "Server " + this.serverSocket.getInetAddress().getHostAddress() + ":" + this.serverSocket.getLocalPort());
         Null.checkRun(this.multicastClient, () -> this.multicastClient.start());
+        this.eventDispatcher.dispatch(new ServerStarted(this));
     }
 
     /**
@@ -274,9 +282,19 @@ public class Server implements Killable, Runnable
             {
                 if (this.running)
                 {
-                    e.printStackTrace();
+                    dispatchExceptionEvent(new UnspecifiedServerException(this, e), false);
                 }
             }
+        }
+    }
+
+    protected void dispatchExceptionEvent(ServerExceptionEvent event, boolean requiresHandling)
+    {
+        int dispatched = this.eventDispatcher.dispatch(event);
+
+        if (requiresHandling && dispatched == 0)
+        {
+            throw new WrappedException(event.getException());
         }
     }
 

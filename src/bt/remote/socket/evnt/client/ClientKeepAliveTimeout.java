@@ -1,8 +1,8 @@
-package bt.remote.socket.evnt;
+package bt.remote.socket.evnt.client;
 
 import bt.remote.socket.Client;
 
-public class KeepAliveTimeout extends ClientExceptionEvent
+public class ClientKeepAliveTimeout extends ClientExceptionEvent
 {
     private long exceededTimeout;
 
@@ -10,7 +10,7 @@ public class KeepAliveTimeout extends ClientExceptionEvent
      * @param client
      * @param e
      */
-    public KeepAliveTimeout(Client client, Exception e, long exceededTimeout)
+    public ClientKeepAliveTimeout(Client client, Exception e, long exceededTimeout)
     {
         super(client, e);
         this.exceededTimeout = exceededTimeout;

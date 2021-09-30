@@ -6,7 +6,13 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.function.Consumer;
 
+import bt.remote.socket.evnt.mcast.MulticastClientExceptionEvent;
+import bt.remote.socket.evnt.mcast.MulticastClientKilled;
+import bt.remote.socket.evnt.mcast.MulticastClientStarted;
+import bt.remote.socket.evnt.mcast.UnspecifiedMulticastClientException;
+import bt.remote.socket.exc.WrappedException;
 import bt.runtime.InstanceKiller;
+import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
 import bt.types.Killable;
 import bt.utils.Exceptions;
@@ -40,6 +46,9 @@ public class MulticastClient implements Killable
     /** The multicast group address that this client is connected to. */
     protected InetAddress multicastGroup;
 
+    /** A dispatcher to distribute client related events. */
+    protected Dispatcher eventDispatcher;
+
     /**
      * Creates a new instance and attempts to connect to the given address and port.
      *
@@ -62,9 +71,9 @@ public class MulticastClient implements Killable
      */
     public void start()
     {
-        System.out.println("Starting MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.mcastSocket.getLocalPort());
         this.running = true;
         Threads.get().execute(() -> listenForMulticast(), "MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.mcastSocket.getLocalPort());
+        this.eventDispatcher.dispatch(new MulticastClientStarted(this));
     }
 
     /**
@@ -109,7 +118,6 @@ public class MulticastClient implements Killable
     @Override
     public void kill()
     {
-        System.out.println("Killing MulticastClient " + this.multicastGroup.getHostAddress() + ":" + this.mcastSocket.getLocalPort());
         this.running = false;
         Null.checkRun(this.mcastSocket, () -> Exceptions.ignoreThrow(() -> this.mcastSocket.leaveGroup(this.multicastGroup)));
         Exceptions.ignoreThrow(() -> Null.checkClose(this.mcastSocket));
@@ -118,6 +126,8 @@ public class MulticastClient implements Killable
         {
             InstanceKiller.unregister(this);
         }
+
+        this.eventDispatcher.dispatch(new MulticastClientKilled(this));
     }
 
     /**
@@ -138,8 +148,33 @@ public class MulticastClient implements Killable
             }
             catch (IOException e)
             {
-                // ignore
+                dispatchExceptionEvent(new UnspecifiedMulticastClientException(this, e), false);
             }
         }
+    }
+
+    protected void dispatchExceptionEvent(MulticastClientExceptionEvent event, boolean requiresHandling)
+    {
+        int dispatched = this.eventDispatcher.dispatch(event);
+
+        if (requiresHandling && dispatched == 0)
+        {
+            throw new WrappedException(event.getException());
+        }
+    }
+
+    public int getPort()
+    {
+        return port;
+    }
+
+    public InetAddress getMulticastGroup()
+    {
+        return multicastGroup;
+    }
+
+    public Dispatcher getEventDispatcher()
+    {
+        return eventDispatcher;
     }
 }

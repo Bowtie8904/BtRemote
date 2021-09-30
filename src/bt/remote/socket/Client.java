@@ -1,7 +1,7 @@
 package bt.remote.socket;
 
-import bt.remote.socket.evnt.*;
-import bt.remote.socket.exc.WrappedClientException;
+import bt.remote.socket.evnt.client.*;
+import bt.remote.socket.exc.WrappedException;
 import bt.runtime.InstanceKiller;
 import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
@@ -97,18 +97,18 @@ public abstract class Client implements Killable, Runnable
      * <p>
      * Possible events:
      * <ul>
-     * <li>{@link PingUpdate} if the client has a new value for ping. Might not be supported by all clients</li>
-     * <li>{@link KeepAliveTimeout} if a sent keep alive message was not answered in time. Might not be supported by all clients</li>
-     * <li>{@link ConnectionSuccessfull} initial connection to the host succeeded</li>
-     * <li>{@link ConnectionFailed} initial connection to the host failed</li>
-     * <li>{@link ConnectionLost} previously established connection was lost</li>
-     * <li>{@link ReconnectStarted} reconnect efforts were started</li>
-     * <li>{@link ReconnectFailed} reconnect efforts failed</li>
-     * <li>{@link ReconnectSuccessfull} reconnect efforts were successful</li>
-     * <li>{@link ReconnectAttempt} a specific reconnect attempt was started</li>
-     * <li>{@link ReconnectAttemptFailed} a specific reconnect attempt failed</li>
+     * <li>{@link ClientPingUpdate} if the client has a new value for ping. Might not be supported by all clients</li>
+     * <li>{@link ClientKeepAliveTimeout} if a sent keep alive message was not answered in time. Might not be supported by all clients</li>
+     * <li>{@link ClientConnectionSuccessfull} initial connection to the host succeeded</li>
+     * <li>{@link ClientConnectionFailed} initial connection to the host failed</li>
+     * <li>{@link ClientConnectionLost} previously established connection was lost</li>
+     * <li>{@link ClientReconnectStarted} reconnect efforts were started</li>
+     * <li>{@link ClientReconnectFailed} reconnect efforts failed</li>
+     * <li>{@link ClientReconnectSuccessfull} reconnect efforts were successful</li>
+     * <li>{@link ClientReconnectAttempt} a specific reconnect attempt was started</li>
+     * <li>{@link ClientReconnectAttemptFailed} a specific reconnect attempt failed</li>
      * <li>{@link ClientKilled} the client was destroyed through a call to {@link #kill()}</li>
-     * <li>{@link UnspecifiedException} less specific exception was thrown somewhere in this class</li>
+     * <li>{@link UnspecifiedClientException} less specific exception was thrown somewhere in this class</li>
      * </ul>
      * </p>
      *
@@ -145,14 +145,14 @@ public abstract class Client implements Killable, Runnable
     {
         boolean reconnected = false;
         int attempts = 0;
-        this.eventDispatcher.dispatch(new ReconnectStarted(this));
+        this.eventDispatcher.dispatch(new ClientReconnectStarted(this));
         closeResources();
         Exception failureReason = null;
 
         while (attempts < this.maxReconnectAttempts || this.maxReconnectAttempts == -1)
         {
             attempts ++ ;
-            this.eventDispatcher.dispatch(new ReconnectAttempt(this, attempts, this.maxReconnectAttempts));
+            this.eventDispatcher.dispatch(new ClientReconnectAttempt(this, attempts, this.maxReconnectAttempts));
 
             try
             {
@@ -164,12 +164,12 @@ public abstract class Client implements Killable, Runnable
             }
             catch (ConnectException e)
             {
-                dispatchExceptionEvent(new ReconnectAttemptFailed(this, e, attempts, this.maxReconnectAttempts), false);
+                dispatchExceptionEvent(new ClientReconnectAttemptFailed(this, e, attempts, this.maxReconnectAttempts), false);
                 failureReason = e;
             }
             catch (IOException e1)
             {
-                dispatchExceptionEvent(new ReconnectAttemptFailed(this, e1, attempts, this.maxReconnectAttempts), false);
+                dispatchExceptionEvent(new ClientReconnectAttemptFailed(this, e1, attempts, this.maxReconnectAttempts), false);
                 failureReason = e1;
                 break;
             }
@@ -177,11 +177,11 @@ public abstract class Client implements Killable, Runnable
 
         if (reconnected)
         {
-            this.eventDispatcher.dispatch(new ReconnectSuccessfull(this));
+            this.eventDispatcher.dispatch(new ClientReconnectSuccessfull(this));
         }
         else
         {
-            dispatchExceptionEvent(new ReconnectFailed(this, failureReason), true);
+            dispatchExceptionEvent(new ClientReconnectFailed(this, failureReason), true);
             kill();
         }
     }
@@ -194,12 +194,12 @@ public abstract class Client implements Killable, Runnable
         {
             setupConnection();
             startThreads();
-            this.eventDispatcher.dispatch(new ConnectionSuccessfull(this));
+            this.eventDispatcher.dispatch(new ClientConnectionSuccessfull(this));
         }
         catch (IOException e)
         {
             this.running = false;
-            dispatchExceptionEvent(new ConnectionFailed(this, e), true);
+            dispatchExceptionEvent(new ClientConnectionFailed(this, e), true);
             kill();
         }
     }
@@ -232,7 +232,7 @@ public abstract class Client implements Killable, Runnable
             {
                 if (this.running)
                 {
-                    dispatchExceptionEvent(new ConnectionLost(this, eof), false);
+                    dispatchExceptionEvent(new ClientConnectionLost(this, eof), false);
                     error = true;
                     this.running = false;
                     break;
@@ -242,7 +242,7 @@ public abstract class Client implements Killable, Runnable
             {
                 if (this.running)
                 {
-                    dispatchExceptionEvent(new ConnectionLost(this, e), false);
+                    dispatchExceptionEvent(new ClientConnectionLost(this, e), false);
                     this.running = false;
                     kill();
                     break;
@@ -250,7 +250,7 @@ public abstract class Client implements Killable, Runnable
             }
             catch (IOException io)
             {
-                dispatchExceptionEvent(new UnspecifiedException(this, io), false);
+                dispatchExceptionEvent(new UnspecifiedClientException(this, io), false);
             }
         }
 
@@ -273,7 +273,7 @@ public abstract class Client implements Killable, Runnable
 
         if (requiresHandling && dispatched == 0)
         {
-            throw new WrappedClientException(event.getException());
+            throw new WrappedException(event.getException());
         }
     }
 
