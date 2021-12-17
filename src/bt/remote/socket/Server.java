@@ -7,6 +7,8 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import bt.console.output.styled.Style;
+import bt.log.Log;
 import bt.remote.socket.evnt.mcast.MulticastClientEvent;
 import bt.remote.socket.evnt.server.*;
 import bt.remote.socket.exc.WrappedException;
@@ -14,6 +16,7 @@ import bt.runtime.InstanceKiller;
 import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
 import bt.types.Killable;
+import bt.utils.Array;
 import bt.utils.Exceptions;
 import bt.utils.Null;
 
@@ -220,6 +223,59 @@ public class Server implements Killable, Runnable
         return this.eventDispatcher;
     }
 
+    private String formatClientHostPortString(ServerClientEvent e)
+    {
+        return Style.apply(e.getClient().getHost(), "-red", "yellow") + ":" + Style.apply(e.getClient().getPort() + "", "-red", "yellow");
+    }
+
+    private String formatHostPortString(ServerEvent e)
+    {
+        return Style.apply(e.getServer().getHost(), "-red", "yellow") + ":" + Style.apply(e.getServer().getPort() + "", "-red", "yellow");
+    }
+
+    public void configureDefaultEventListeners()
+    {
+        configureDefaultEventListeners(NewClientConnection.class,
+                                       RemovedClientConnection.class,
+                                       ServerClientKilled.class,
+                                       UnspecifiedServerException.class,
+                                       ServerKilled.class,
+                                       ServerStarted.class);
+    }
+
+    public void configureDefaultEventListeners(Class<? extends ServerEvent> ev1, Class<? extends ServerEvent>... evs)
+    {
+        Class<? extends ServerEvent>[] totalEvs = Array.push(evs, ev1);
+
+        for (var ev : totalEvs)
+        {
+            if (ev.equals(NewClientConnection.class))
+            {
+                getEventDispatcher().subscribeTo(NewClientConnection.class, e -> Log.info("New client connection {}",  formatClientHostPortString(e)));
+            }
+            else if (ev.equals(RemovedClientConnection.class))
+            {
+                getEventDispatcher().subscribeTo(RemovedClientConnection.class, e -> Log.info("Removed client connection {}",  formatClientHostPortString(e)));
+            }
+            else if (ev.equals(ServerClientKilled.class))
+            {
+                getEventDispatcher().subscribeTo(ServerClientKilled.class, e -> Log.debug("Client killed",  formatClientHostPortString(e)));
+            }
+            else if (ev.equals(UnspecifiedServerException.class))
+            {
+                getEventDispatcher().subscribeTo(UnspecifiedServerException.class, e -> Log.error("Error", e.getException()));
+            }
+            else if (ev.equals(ServerKilled.class))
+            {
+                getEventDispatcher().subscribeTo(ServerKilled.class, e -> Log.debug("Server killed {}",  formatHostPortString(e)));
+            }
+            else if (ev.equals(ServerStarted.class))
+            {
+                getEventDispatcher().subscribeTo(ServerStarted.class, e -> Log.info("Server started {}",  formatHostPortString(e)));
+            }
+        }
+    }
+
     /**
      * Closes the wrapped {@link ServerSocket} and (if setup) the {@link MulticastClient}.
      *
@@ -322,5 +378,10 @@ public class Server implements Killable, Runnable
     public String getHost()
     {
         return host;
+    }
+
+    public MulticastClient getMulticastClient()
+    {
+        return this.multicastClient;
     }
 }

@@ -1,11 +1,14 @@
 package bt.remote.socket;
 
+import bt.console.output.styled.Style;
+import bt.log.Log;
 import bt.remote.socket.evnt.client.*;
 import bt.remote.socket.exc.WrappedException;
 import bt.runtime.InstanceKiller;
 import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
 import bt.types.Killable;
+import bt.utils.Array;
 import bt.utils.Exceptions;
 import bt.utils.Null;
 
@@ -117,6 +120,97 @@ public abstract class Client implements Killable, Runnable
     public Dispatcher getEventDispatcher()
     {
         return this.eventDispatcher;
+    }
+
+    private String formatHostPortString(ClientEvent e)
+    {
+        return Style.apply(e.getClient().getHost(), "-red", "yellow") + ":" + Style.apply(e.getClient().getPort() + "", "-red", "yellow");
+    }
+
+    public void configureDefaultEventListeners()
+    {
+        configureDefaultEventListeners(ClientKeepAliveTimeout.class,
+                                       ClientConnectionSuccessfull.class,
+                                       ClientConnectionFailed.class,
+                                       ClientConnectionLost.class,
+                                       ClientReconnectStarted.class,
+                                       ClientReconnectFailed.class,
+                                       ClientReconnectSuccessfull.class,
+                                       ClientReconnectAttempt.class,
+                                       ClientReconnectAttemptFailed.class,
+                                       ClientKilled.class,
+                                       UnspecifiedClientException.class,
+                                       ClientPingUpdate.class);
+    }
+
+    public void configureDefaultEventListeners(Class<? extends ClientEvent> ev1, Class<? extends ClientEvent>... evs)
+    {
+        Class<? extends ClientEvent>[] totalEvs = Array.push(evs, ev1);
+
+        for (var ev : totalEvs)
+        {
+            if (ev.equals(ClientKeepAliveTimeout.class))
+            {
+                getEventDispatcher().subscribeTo(ClientKeepAliveTimeout.class, e -> Log.warn("Keep alive request timed out for connection {}",
+                                                                                             formatHostPortString(e)));
+            }
+            else if (ev.equals(ClientConnectionSuccessfull.class))
+            {
+                getEventDispatcher().subscribeTo(ClientConnectionSuccessfull.class, e -> Log.info(Style.apply("Connected to {}", "lime"),
+                                                                                                  formatHostPortString(e)));
+            }
+            else if (ev.equals(ClientConnectionFailed.class))
+            {
+                getEventDispatcher().subscribeTo(ClientConnectionFailed.class, e -> Log.error("Failed to connect to " + formatHostPortString(e),
+                                                                                              e.getException()));
+            }
+            else if (ev.equals(ClientConnectionLost.class))
+            {
+                getEventDispatcher().subscribeTo(ClientConnectionLost.class, e -> Log.error("Connection to " + formatHostPortString(e) + " lost",
+                                                                                            e.getException()));
+            }
+            else if (ev.equals(ClientReconnectStarted.class))
+            {
+                getEventDispatcher().subscribeTo(ClientReconnectStarted.class, e -> Log.info("Attempting to reconnect to {}",
+                                                                                                  formatHostPortString(e)));
+            }
+            else if (ev.equals(ClientReconnectFailed.class))
+            {
+                getEventDispatcher().subscribeTo(ClientReconnectFailed.class, e -> Log.error("Failed to reconnect to " + formatHostPortString(e),
+                                                                                             e.getException()));
+            }
+            else if (ev.equals(ClientReconnectSuccessfull.class))
+            {
+                getEventDispatcher().subscribeTo(ClientReconnectSuccessfull.class, e -> Log.info(Style.apply("Successfully reconnected to {}", "lime"),
+                                                                                                 formatHostPortString(e)));
+            }
+            else if (ev.equals(ClientReconnectAttempt.class))
+            {
+                getEventDispatcher().subscribeTo(ClientReconnectAttempt.class, e -> Log.debug("Attempt {}/{}",
+                                                                                              Style.apply(e.getAttempt() + "", "yellow"),
+                                                                                              Style.apply(e.getMaxAttempts() == -1 ? "-" : e.getMaxAttempts() + ""), "yellow"));
+            }
+            else if (ev.equals(ClientReconnectAttemptFailed.class))
+            {
+                getEventDispatcher().subscribeTo(ClientReconnectAttemptFailed.class,
+                                                 e -> Log.warn("Reconnect attempt {}/{} to {} failed",
+                                                                Style.apply(e.getAttempt() + "", "-red", "yellow"),
+                                                                Style.apply(e.getMaxAttempts() == -1 ? "-" : e.getMaxAttempts() + ""), "-red", "yellow",
+                                                                formatHostPortString(e)));
+            }
+            else if (ev.equals(ClientKilled.class))
+            {
+                getEventDispatcher().subscribeTo(ClientKilled.class, e -> Log.debug("Client killed {}",  formatHostPortString(e)));
+            }
+            else if (ev.equals(UnspecifiedClientException.class))
+            {
+                getEventDispatcher().subscribeTo(UnspecifiedClientException.class, e -> Log.error("Error", e.getException()));
+            }
+            else if (ev.equals(ClientPingUpdate.class))
+            {
+                getEventDispatcher().subscribeTo(ClientPingUpdate.class, e -> Log.debug("Ping: {}",  formatHostPortString(e), e.getPing()));
+            }
+        }
     }
 
     /**

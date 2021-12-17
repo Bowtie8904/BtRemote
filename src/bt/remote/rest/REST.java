@@ -10,6 +10,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Map;
 
+import bt.log.Log;
 import org.json.JSONObject;
 
 import bt.io.json.JSON;
@@ -303,7 +304,7 @@ public final class REST
         }
         catch (UnsupportedEncodingException e)
         {
-            e.printStackTrace();
+            Log.error("Used encoding is not supported", e);
         }
 
         return result.toString();

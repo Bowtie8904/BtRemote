@@ -6,15 +6,15 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.function.Consumer;
 
-import bt.remote.socket.evnt.mcast.MulticastClientExceptionEvent;
-import bt.remote.socket.evnt.mcast.MulticastClientKilled;
-import bt.remote.socket.evnt.mcast.MulticastClientStarted;
-import bt.remote.socket.evnt.mcast.UnspecifiedMulticastClientException;
+import bt.console.output.styled.Style;
+import bt.log.Log;
+import bt.remote.socket.evnt.mcast.*;
 import bt.remote.socket.exc.WrappedException;
 import bt.runtime.InstanceKiller;
 import bt.runtime.evnt.Dispatcher;
 import bt.scheduler.Threads;
 import bt.types.Killable;
+import bt.utils.Array;
 import bt.utils.Exceptions;
 import bt.utils.Null;
 
@@ -177,5 +177,39 @@ public class MulticastClient implements Killable
     public Dispatcher getEventDispatcher()
     {
         return eventDispatcher;
+    }
+
+    private String formatHostPortString(MulticastClientEvent e)
+    {
+        return Style.apply(e.getClient().getMulticastGroup().getHostAddress(), "-red", "yellow")
+                + ":" + Style.apply(e.getClient().getPort() + "", "-red", "yellow");
+    }
+
+    public void configureDefaultEventListeners()
+    {
+        configureDefaultEventListeners(MulticastClientKilled.class,
+                                       MulticastClientStarted.class,
+                                       UnspecifiedMulticastClientException.class);
+    }
+
+    public void configureDefaultEventListeners(Class<? extends MulticastClientEvent> ev1, Class<? extends MulticastClientEvent>... evs)
+    {
+        Class<? extends MulticastClientEvent>[] totalEvs = Array.push(evs, ev1);
+
+        for (var ev : totalEvs)
+        {
+            if (ev.equals(MulticastClientKilled.class))
+            {
+                getEventDispatcher().subscribeTo(MulticastClientKilled.class, e -> Log.debug("MulticastClient killed {}", formatHostPortString(e)));
+            }
+            else if (ev.equals(MulticastClientStarted.class))
+            {
+                getEventDispatcher().subscribeTo(MulticastClientStarted.class, e -> Log.info("MulticastClient started {}",  formatHostPortString(e)));
+            }
+            else if (ev.equals(UnspecifiedMulticastClientException.class))
+            {
+                getEventDispatcher().subscribeTo(UnspecifiedMulticastClientException.class, e -> Log.error("Error", e.getException()));
+            }
+        }
     }
 }

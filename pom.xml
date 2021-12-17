@@ -16,18 +16,6 @@
           <verbose>true</verbose>
         </configuration>
       </plugin>
-      <plugin>  <!-- Create sources.jar -->
-        <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <executions>
-                <execution>
-                    <id>attach-sources</id>
-                    <goals>
-                        <goal>jar</goal>
-                    </goals>
-                </execution>
-            </executions>
-   </plugin>
     </plugins>
   </build>
   <repositories>
@@ -40,12 +28,12 @@
     <dependency>
         <groupId>com.github.Bowtie8904</groupId>
         <artifactId>BtCommons</artifactId>
-        <version>master-SNAPSHOT</version>
+        <version>a1e3c260</version>
     </dependency>
     <dependency>
         <groupId>com.github.Bowtie8904</groupId>
         <artifactId>BtIO</artifactId>
-        <version>master-SNAPSHOT</version>
+        <version>d3e5790d</version>
     </dependency>
   </dependencies>
 </project>
