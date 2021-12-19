@@ -208,7 +208,7 @@ public abstract class Client implements Killable, Runnable
             }
             else if (ev.equals(ClientPingUpdate.class))
             {
-                getEventDispatcher().subscribeTo(ClientPingUpdate.class, e -> Log.debug("Ping: {}",  formatHostPortString(e), e.getPing()));
+                getEventDispatcher().subscribeTo(ClientPingUpdate.class, e -> Log.debug("Ping({}): {}",  formatHostPortString(e), e.getPing()));
             }
         }
     }
