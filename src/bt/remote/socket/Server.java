@@ -225,12 +225,12 @@ public class Server implements Killable, Runnable
 
     private String formatClientHostPortString(ServerClientEvent e)
     {
-        return Style.apply(e.getClient().getHost(), "-red", "yellow") + ":" + Style.apply(e.getClient().getPort() + "", "-red", "yellow");
+        return Style.apply(e.getClient().getHost(), "-*", "yellow") + ":" + Style.apply(e.getClient().getPort() + "", "-*", "yellow");
     }
 
     private String formatHostPortString(ServerEvent e)
     {
-        return Style.apply(e.getServer().getHost(), "-red", "yellow") + ":" + Style.apply(e.getServer().getPort() + "", "-red", "yellow");
+        return Style.apply(e.getServer().getHost(), "-*", "yellow") + ":" + Style.apply(e.getServer().getPort() + "", "-*", "yellow");
     }
 
     public void configureDefaultEventListeners()

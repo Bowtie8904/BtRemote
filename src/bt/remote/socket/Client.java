@@ -124,7 +124,7 @@ public abstract class Client implements Killable, Runnable
 
     private String formatHostPortString(ClientEvent e)
     {
-        return Style.apply(e.getClient().getHost(), "-red", "yellow") + ":" + Style.apply(e.getClient().getPort() + "", "-red", "yellow");
+        return Style.apply(e.getClient().getHost(), "-*", "yellow") + ":" + Style.apply(e.getClient().getPort() + "", "-*", "yellow");
     }
 
     public void configureDefaultEventListeners()
@@ -194,8 +194,8 @@ public abstract class Client implements Killable, Runnable
             {
                 getEventDispatcher().subscribeTo(ClientReconnectAttemptFailed.class,
                                                  e -> Log.warn("Reconnect attempt {}/{} to {} failed",
-                                                                Style.apply(e.getAttempt() + "", "-red", "yellow"),
-                                                                Style.apply(e.getMaxAttempts() == -1 ? "-" : e.getMaxAttempts() + ""), "-red", "yellow",
+                                                                Style.apply(e.getAttempt() + "", "-*", "yellow"),
+                                                                Style.apply(e.getMaxAttempts() == -1 ? "-" : e.getMaxAttempts() + ""), "-*", "yellow",
                                                                 formatHostPortString(e)));
             }
             else if (ev.equals(ClientKilled.class))
