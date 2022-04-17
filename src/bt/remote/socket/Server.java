@@ -167,8 +167,8 @@ public class Server implements Killable, Runnable
             ServerClient client = createClient(socket);
             client.setServer(this);
             this.clients.add(client);
-            this.eventDispatcher.dispatch(new NewClientConnection(this, client));
             client.start();
+            this.eventDispatcher.dispatch(new NewClientConnection(this, client));
 
             connected = true;
         }
